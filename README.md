@@ -4,7 +4,7 @@ Select English text and press **Super+R** (Windows key + R) to
 hear it. Select new text and press it again to replace speech.
 
 While it reads, **Super+=** and **Super+-** change the speed.
-The floating player also has pause, stop, and a faster button.
+The small floating player has pause, stop, and a speed menu.
 The chosen speed is saved for next time.
 
 Open Read Aloud from the app launcher to see the shortcut.
