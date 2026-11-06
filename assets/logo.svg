@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" color="#3868dc">
+  <title>Read Aloud</title>
+  <path fill="currentColor" fill-rule="evenodd" d="M22 16h38l15 15v68c0 7-5 12-12 12H22c-7 0-12-5-12-12V28c0-7 5-12 12-12Zm3 26v8h32v-8H25Zm0 18v8h32v-8H25Zm0 18v8h23v-8H25Z"/>
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="8" d="M89 45c9 10 9 28 0 38M105 32c16 17 16 47 0 64"/>
+</svg>

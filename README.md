@@ -1,7 +1,7 @@
 # Read Aloud
 
-Select English text and press **Super+R** to hear it. Select
-new text and press the shortcut again to replace the speech.
+Select English text and press **Super+R** (Windows key + R) to
+hear it. Select new text and press it again to replace speech.
 
 While it reads, **Super+=** and **Super+-** change the speed.
 The floating player also has pause, stop, and a speed slider.
@@ -10,6 +10,9 @@ The chosen speed is saved for next time.
 The app starts at login and keeps the voice ready. If it was
 not running, the first shortcut starts it; loading the model
 can take several seconds. Later requests use the warm model.
+The launcher and player show the Read Aloud logo. If a
+preferred output is set, the app uses it while it is
+connected; otherwise it uses the system output.
 
 ## Setup
 
@@ -23,9 +26,9 @@ python3 scripts/setup.py install
 ```
 
 The build and its copy of Electron live on New Volume. The
-setup script adds three GNOME shortcuts and a login entry;
-it preserves other custom shortcuts. To remove both and stop
-the app, run `python3 scripts/setup.py uninstall`.
+setup script adds three GNOME shortcuts, a launcher, and a
+login entry; it preserves other custom shortcuts. To remove
+them and stop the app, run `python3 scripts/setup.py uninstall`.
 
 The build reuses the Electron installation in `clocki` and
 the UI packages in `svg`. The resident voice uses the

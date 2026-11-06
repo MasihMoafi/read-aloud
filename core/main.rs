@@ -43,11 +43,34 @@ fn runtime_dir() -> PathBuf {
         })
 }
 
-fn config_file() -> PathBuf {
+fn config_dir() -> PathBuf {
     env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(env::var_os("HOME").unwrap()).join(".config"))
-        .join("read-aloud/speed")
+        .join("read-aloud")
+}
+
+fn config_file() -> PathBuf {
+    config_dir().join("speed")
+}
+
+fn preferred_output() -> Option<String> {
+    let output = fs::read_to_string(config_dir().join("output")).ok()?;
+    let output = output.trim();
+    if output.is_empty() {
+        return None;
+    }
+    let ports = Command::new("pw-link").arg("-i").output().ok()?;
+    let prefix = format!("{output}:playback_");
+    if ports.status.success()
+        && String::from_utf8_lossy(&ports.stdout)
+            .lines()
+            .any(|port| port.starts_with(&prefix))
+    {
+        Some(output.to_owned())
+    } else {
+        None
+    }
 }
 
 fn socket_path() -> PathBuf {
@@ -355,6 +378,9 @@ impl Engine {
         if self.audio.is_none() && !self.paused {
             if let Some(file) = self.rendered.get(&self.current) {
                 let mut command = Command::new("pw-play");
+                if let Some(output) = preferred_output() {
+                    command.args(["--target", &output]);
+                }
                 command.arg(file).stdout(Stdio::null());
                 child_dies_with_parent(&mut command);
                 match command.spawn() {

@@ -20,6 +20,7 @@ function Player() {
 
   return (
     <main className="player flex h-full items-center gap-2 rounded-lg border bg-background px-3 text-foreground">
+      <span className="logo size-6 shrink-0 bg-primary" role="img" aria-label="Read Aloud" />
       <Button variant="ghost" size="icon" aria-label={state.paused ? "Play" : "Pause"} onClick={() => window.readAloud.action("pause")}>
         {state.paused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
       </Button>

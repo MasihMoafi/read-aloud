@@ -22,6 +22,7 @@ node --check electron/main.cjs
 node --check electron/preload.cjs
 node --check scripts/build-ui.cjs
 node scripts/build-ui.cjs --check
+command -v rsvg-convert >/dev/null || { printf '%s\n' 'rsvg-convert is required for the app icon.' >&2; exit 1; }
 if [[ ! -x "$READ_ALOUD_BUILD/electron/electron" ]]; then
   electron_source="${READ_ALOUD_ELECTRON_SOURCE:-$HOME/Desktop/p/clocki/node_modules/electron/dist}"
   test -x "$electron_source/electron" || { printf '%s\n' 'The installed Electron runtime is missing.' >&2; exit 1; }

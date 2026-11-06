@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BUILD = Path(os.environ.get("READ_ALOUD_BUILD", "/run/media/masih/New Volume/dev/read-aloud"))
 WORK = Path.home() / "Work/tries"
 SINK = f"read-aloud-check-{os.getpid()}"
+PREFERRED_SINK = SINK + "-preferred"
 
 
 def command(*args):
@@ -62,10 +63,10 @@ class States:
         self.client.close()
 
 
-def sink_id():
+def sink_id(name):
     listing = command("pw-cli", "ls", "Node")
     for block in re.split(r"(?=\n\s*id \d+, type PipeWire:Interface:Node)", listing):
-        if f'node.name = "{SINK}"' in block:
+        if f'node.name = "{name}"' in block:
             return re.search(r"\bid (\d+),", block).group(1)
     raise AssertionError("PipeWire test sink did not appear")
 
@@ -81,7 +82,7 @@ def wait_socket(path, process):
     raise AssertionError("Speech service socket did not appear")
 
 
-def capture(states, socket_path, output):
+def capture(states, socket_path, output, sink=SINK):
     recorder_name = SINK + "-recorder"
     recorder = subprocess.Popen(
         ["pw-record", "--target", "0", "--properties", f"{{ node.name = {recorder_name} }}", "--rate", "48000", "--channels", "2", str(output)],
@@ -99,12 +100,12 @@ def capture(states, socket_path, output):
         else:
             raise AssertionError("Recorder ports did not appear")
         for channel in ("FL", "FR"):
-            command("pw-link", f"{SINK}:monitor_{channel}", f"{recorder_name}:input_{channel}")
+            command("pw-link", f"{sink}:monitor_{channel}", f"{recorder_name}:input_{channel}")
         graph = command("pw-link", "-l")
         for channel in ("FL", "FR"):
             block = re.search(rf"(?m)^{re.escape(recorder_name)}:input_{channel}\n((?:\s+\|<- [^\n]+\n)*)", graph)
             sources = re.findall(r"\|<- ([^\n]+)", block.group(1)) if block else []
-            if sources != [f"{SINK}:monitor_{channel}"]:
+            if sources != [f"{sink}:monitor_{channel}"]:
                 raise AssertionError(f"Unsafe recorder links: {sources}")
         time.sleep(.2)
         send(socket_path, "PAUSE")
@@ -134,13 +135,14 @@ def prepare(states, socket_path, text, speed):
 def main():
     WORK.mkdir(parents=True, exist_ok=True)
     temp = Path(tempfile.mkdtemp(prefix="read-aloud-test-", dir=WORK))
-    sink = None
+    sinks = {}
     daemon = None
     states = None
     log = None
     try:
-        command("pw-cli", "create-node", "adapter", f'{{ factory.name = support.null-audio-sink node.name = "{SINK}" media.class = Audio/Sink audio.position = [ FL FR ] object.linger = true priority.session = 1 }}')
-        sink = sink_id()
+        for name in (SINK, PREFERRED_SINK):
+            command("pw-cli", "create-node", "adapter", f'{{ factory.name = support.null-audio-sink node.name = "{name}" media.class = Audio/Sink audio.position = [ FL FR ] object.linger = true priority.session = 1 }}')
+            sinks[name] = sink_id(name)
         bin_dir = temp / "bin"
         bin_dir.mkdir()
         player = bin_dir / "pw-play"
@@ -159,6 +161,15 @@ def main():
         socket_path = temp / "runtime/daemon.sock"
         states = States(socket_path)
         states.wait(lambda state: state[4] == "1")
+        output = temp / "config/read-aloud/output"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(PREFERRED_SINK)
+        prepare(states, socket_path, "Preferred output test.", 0)
+        capture(states, socket_path, temp / "preferred.wav", PREFERRED_SINK)
+        output.write_text("unavailable-output")
+        prepare(states, socket_path, "Fallback output test.", 0)
+        capture(states, socket_path, temp / "fallback.wav")
+        output.write_text("")
         private_text = "Private selection must never appear in the error log."
         (temp / "runtime").chmod(0o500)
         try:
@@ -217,7 +228,7 @@ def main():
         os.kill(int(children[0]), signal.SIGKILL)
         if daemon.wait(timeout=5) == 0 or socket_path.exists():
             raise AssertionError("Worker failure left the service running")
-        print(f"Audio: {normal:.2f}s at 1x, {faster:.2f}s at 2x; replacement: {replacement:.2f}s; speed restored; empty selection and failures handled without logging text.")
+        print(f"Preferred output and fallback passed. Audio: {normal:.2f}s at 1x, {faster:.2f}s at 2x; replacement: {replacement:.2f}s; speed restored; empty selection and failures handled without logging text.")
     finally:
         if states is not None:
             states.close()
@@ -230,13 +241,13 @@ def main():
                 daemon.wait(timeout=5)
         if log is not None:
             log.close()
-        if sink is None:
-            try:
-                sink = sink_id()
-            except (AssertionError, subprocess.CalledProcessError):
-                pass
-        if sink is not None:
-            command("pw-cli", "destroy", sink)
+        for name in (SINK, PREFERRED_SINK):
+            if name not in sinks:
+                try:
+                    sinks[name] = sink_id(name)
+                except (AssertionError, subprocess.CalledProcessError):
+                    continue
+            command("pw-cli", "destroy", sinks[name])
         subprocess.run(["gio", "trash", str(temp)], check=True)
 
 

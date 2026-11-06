@@ -4,7 +4,7 @@ Goal: Read selected English text on GNOME with a shortcut and a small player.
 
 Constraints: Follow [BRIEF.md](BRIEF.md); reuse installed software without downloading. Keep synthesis local on CUDA and build output on New Volume.
 
-Statuses describe offscreen checks; Masih's own desktop check remains open.
+Unless noted, statuses describe offscreen checks; Masih's selected-text desktop check remains open.
 
 | # | Item | Acceptance check | Status |
 | --- | --- | --- | --- |
@@ -16,6 +16,8 @@ Statuses describe offscreen checks; Masih's own desktop check remains open.
 | 6 | Concurrency | A new selection or speed change discards obsolete audio even when synthesis is in progress. | offscreen checked |
 | 7 | Observability | A local log identifies worker readiness and errors without recording selected text. | offscreen checked |
 | 8 | Rollback | Uninstall removes this app's shortcuts and startup entry while preserving other shortcuts. | checked |
+| 9 | Logo | A readable mark appears in the player and the GNOME launcher in light and dark themes. | offscreen checked |
+| 10 | Output | Speech uses the preferred output while connected, falls back to the system output otherwise, and leaves the system default unchanged. | Iceman heard; fallback checked |
 
 Plan: A Rust daemon coordinates a resident Python Kokoro worker and PipeWire playback. An Electron window connects over a private local socket. GNOME shortcuts invoke a small client of the same Rust binary. This keeps the GPU model loaded and isolates playback from the UI.
 

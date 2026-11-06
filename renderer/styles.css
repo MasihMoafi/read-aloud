@@ -16,4 +16,5 @@
 html, body, #root { width: 100%; height: 100%; overflow: hidden; }
 body { margin: 0; font-family: system-ui, sans-serif; }
 .player { -webkit-app-region: drag; }
+.logo { mask: url("logo.svg") center / contain no-repeat; }
 button, [data-slot="slider"] { -webkit-app-region: no-drag; }

@@ -15,6 +15,7 @@ let lastError = ''
 let shuttingDown = false
 
 app.disableHardwareAcceleration()
+app.setDesktopName('read-aloud.desktop')
 if (process.env.READ_ALOUD_DEBUG_PORT) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.READ_ALOUD_DEBUG_PORT)
 }
@@ -67,7 +68,7 @@ function createWindow() {
     width: 344, height: 64, minWidth: 320, minHeight: 64,
     x: area.x + area.width - 368, y: area.y + area.height - 88,
     frame: false, resizable: false, show: false, skipTaskbar: true,
-    alwaysOnTop: true,
+    alwaysOnTop: true, icon: path.join(build, 'logo.png'),
     webPreferences: { preload: path.join(root, 'electron/preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
   window.setVisibleOnAllWorkspaces(true)
