@@ -136,13 +136,13 @@ def main():
                             "el => getComputedStyle(el).backgroundColor"
                         )
                     )
-                    page.screenshot(path=str(Path(proof) / f"{name}-{theme}.png"))
+                    page.screenshot(path=str(Path(proof) / f"{name}-{theme}.png"), omit_background=True)
                 assert backgrounds[0] != backgrounds[1], (
                     "Light and dark themes look the same"
                 )
-                page.set_viewport_size({"width": 160, "height": 40})
+                page.set_viewport_size({"width": 168, "height": 40})
                 page.screenshot(path=str(Path(proof) / f"{name}-narrow.png"))
-                page.set_viewport_size({"width": 176, "height": 40})
+                page.set_viewport_size({"width": 184, "height": 40})
 
         def debug_ready():
             try:
