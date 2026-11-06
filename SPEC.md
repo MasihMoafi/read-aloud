@@ -8,10 +8,10 @@ Unless noted, statuses describe offscreen checks; Masih's selected-text desktop 
 
 | # | Item | Acceptance check | Status |
 | --- | --- | --- | --- |
-| 1 | Selection and replacement | Select text in terminal and Chromium, press Super+R, and hear it; selecting other text and pressing again replaces it. | offscreen checked |
+| 1 | Selection and replacement | Select text in terminal and Chromium, press Super+R, and hear it; selecting other text and pressing again replaces it. | browser read confirmed by Masih |
 | 2 | Latency and prefetch | With the model ready, measure hotkey to first sound near one second; subsequent sentences play without waiting for synthesis. | offscreen checked |
 | 3 | Speed | Super+= and Super+- change the current sentence through five steps; the setting survives restart. | offscreen checked |
-| 4 | Player | Play/pause, stop, and the five-step speed slider work; the player appears during reading and hides afterward. | offscreen checked |
+| 4 | Player | Play/pause and stop work; one button increases speed through five steps and shows the current speed. The player appears during reading and hides afterward. | offscreen checked |
 | 5 | Failure | Empty selections and worker/audio errors do not leave a false playing state; errors reach the player. | offscreen checked |
 | 6 | Concurrency | A new selection or speed change discards obsolete audio even when synthesis is in progress. | offscreen checked |
 | 7 | Observability | A local log identifies worker readiness and errors without recording selected text. | offscreen checked |

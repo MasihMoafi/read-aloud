@@ -1,15 +1,14 @@
 import * as React from "react"
 import { createRoot } from "react-dom/client"
-import { Pause, Play, Square, X } from "lucide-react"
+import { Pause, Play, Plus, Square, X } from "lucide-react"
 import { Button } from "./components/button"
-import { Slider } from "./components/slider"
 
 type PlayerState = { active: boolean; paused: boolean; speed: number; speedValue: string; ready: boolean; error: string }
 declare global {
   interface Window {
     readAloud: {
       onState: (listener: (state: PlayerState) => void) => void
-      action: (name: "pause" | "stop" | "speed" | "hide", value?: number) => void
+      action: (name: "pause" | "stop" | "faster" | "hide") => void
     }
   }
 }
@@ -36,10 +35,11 @@ function Player() {
         <Button variant="ghost" size="icon" aria-label="Stop" onClick={() => window.readAloud.action("stop")}>
           <Square aria-hidden="true" />
         </Button>
-        <Slider className="min-w-12 flex-1" min={0} max={4} step={1} value={[state.speed]}
-          aria-label="Playback speed" aria-valuetext={`${state.speedValue} times`}
-          onValueChange={([speed]) => window.readAloud.action("speed", speed)} />
-        <output className="w-12 text-right text-sm tabular-nums" aria-live="polite">{state.speedValue}×</output>
+        <output className="ml-auto text-sm tabular-nums" aria-live="polite">{state.speedValue}×</output>
+        <Button variant="outline" size="sm" aria-label="Increase speed" disabled={state.speed >= 4}
+          onClick={() => window.readAloud.action("faster")}>
+          <Plus aria-hidden="true" /> Faster
+        </Button>
       </>}
     </main>
   )

@@ -6,6 +6,7 @@ Set READ_ALOUD_VISUAL_PROOF to save screenshots for inspection.
 Set READ_ALOUD_LAUNCHER to check an installed desktop entry too.
 """
 
+import json
 import os
 from pathlib import Path
 import signal
@@ -114,10 +115,9 @@ def main():
                     backgrounds.append(page.locator("main").evaluate("el => getComputedStyle(el).backgroundColor"))
                     page.screenshot(path=str(Path(proof) / f"{name}-{theme}.png"))
                 assert backgrounds[0] != backgrounds[1], "Light and dark themes look the same"
-                if name == "idle":
-                    page.set_viewport_size({"width": 320, "height": 64})
-                    page.screenshot(path=str(Path(proof) / "idle-narrow.png"))
-                    page.set_viewport_size({"width": 344, "height": 64})
+                page.set_viewport_size({"width": 320, "height": 64})
+                page.screenshot(path=str(Path(proof) / f"{name}-narrow.png"))
+                page.set_viewport_size({"width": 344, "height": 64})
 
         def debug_ready():
             try:
@@ -173,6 +173,13 @@ def main():
         send(socket_path, "PAUSE")
         wait_for(lambda: "button \"Stop\"" in appctl("see", "elpis"), "active player")
         screenshots("player")
+        for speed in ("1.25×", "1.5×", "1.75×", "2.0×"):
+            appctl("click", "elpis", "role:button=Increase speed")
+            wait_for(lambda: json.loads(appctl("eval", "elpis", "document.querySelector('output').textContent")) == speed,
+                     f"speed {speed}")
+        assert json.loads(appctl("eval", "elpis", "document.querySelector('[aria-label=\"Increase speed\"]').disabled"))
+        if proof:
+            appctl("shot", "elpis", str(Path(proof) / "player-max.png"))
         appctl("click", "elpis", "role:button=Stop")
         wait_for(lambda: not visible(), "player to hide after stopping")
         shutdown()

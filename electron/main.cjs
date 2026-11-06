@@ -91,10 +91,10 @@ function showWindow() {
   else reveal()
 }
 
-ipcMain.on('action', (_event, name, value) => {
+ipcMain.on('action', (_event, name) => {
   if (name === 'pause') request('PAUSE')
   else if (name === 'stop') request('STOP')
-  else if (name === 'speed' && Number.isInteger(value) && value >= 0 && value <= 4) request(`SPEED ${value}`)
+  else if (name === 'faster') request('FASTER')
   else if (name === 'hide' && window && !window.isDestroyed()) { showIdle = false; window.hide() }
 })
 
