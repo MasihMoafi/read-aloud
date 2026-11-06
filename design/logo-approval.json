@@ -1,7 +1,7 @@
 {
-  "choice": "Minimal gramophone",
+  "choice": "Mockingbird flight sigil (option 1; Masih: 'either would do', 6 Nov)",
   "colour": "teal #147d78",
-  "sha256": "1ddc7a34d83648754bb5ca8fb08f797c951c005a61ee6f93cb1ddd74f9d2cd43",
+  "sha256": "95815110520c49bf33c43bbc9315ef4d54235a1c785aaf7128e2ec85f0e40749",
   "source": "design/logo-source.png",
   "prompt": "design/logo-prompt.txt"
 }
