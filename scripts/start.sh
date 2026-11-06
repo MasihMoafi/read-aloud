@@ -7,4 +7,4 @@ electron="${READ_ALOUD_ELECTRON:-$READ_ALOUD_BUILD/electron/electron}"
 log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/read-aloud"
 mkdir -p "$log_dir"
 unset ELECTRON_RUN_AS_NODE
-exec "$electron" --ozone-platform=x11 "$READ_ALOUD_ROOT" >>"$log_dir/app.log" 2>&1
+exec "$electron" --ozone-platform=x11 "$READ_ALOUD_ROOT" "$@" >>"$log_dir/app.log" 2>&1

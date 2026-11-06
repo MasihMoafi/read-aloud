@@ -7,12 +7,13 @@ While it reads, **Super+=** and **Super+-** change the speed.
 The floating player also has pause, stop, and a speed slider.
 The chosen speed is saved for next time.
 
-The app starts at login and keeps the voice ready. If it was
-not running, the first shortcut starts it; loading the model
-can take several seconds. Later requests use the warm model.
-The launcher and player show the Read Aloud logo. If a
-preferred output is set, the app uses it while it is
-connected; otherwise it uses the system output.
+Open Read Aloud from the app launcher to see the shortcut.
+Close that window when you are done; the app stays ready.
+The app also starts at login and keeps the voice ready. If it
+was not running, the first shortcut starts it; loading the
+model can take several seconds. Later requests use the warm
+model. A preferred output is used while connected; otherwise
+the app uses the system output.
 
 ## Setup
 

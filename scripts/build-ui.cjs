@@ -1,7 +1,8 @@
 const fs = require('node:fs')
 const path = require('node:path')
-const { createRequire } = require('node:module')
 const { execFileSync } = require('node:child_process')
+const { createRequire } = require('node:module')
+const checkLogoApproval = require('./check-logo-approval.cjs')
 
 const root = path.resolve(__dirname, '..')
 const out = process.env.READ_ALOUD_BUILD
@@ -30,6 +31,7 @@ function checkContrast(name, values) {
 }
 
 async function build() {
+  checkLogoApproval(root)
   for (const [name, values] of Object.entries(design)) checkContrast(name, values)
   if (process.argv[2] === '--check') return
   fs.mkdirSync(out, { recursive: true })
@@ -45,7 +47,7 @@ async function build() {
   fs.writeFileSync(path.join(out, 'player.css'), css.css)
   fs.copyFileSync(path.join(root, 'renderer/index.html'), path.join(out, 'index.html'))
   fs.copyFileSync(path.join(root, 'assets/logo.svg'), path.join(out, 'logo.svg'))
-  execFileSync('rsvg-convert', ['-w', '256', '-h', '256', '-o', path.join(out, 'logo.png'), path.join(root, 'assets/logo.svg')])
+  execFileSync('rsvg-convert', ['-w', '256', '-h', '256', '-o', path.join(out, 'logo.png'), path.join(out, 'logo.svg')])
 }
 
 build().catch((error) => { console.error(error); process.exitCode = 1 })

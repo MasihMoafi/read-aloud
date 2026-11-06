@@ -13,6 +13,7 @@ let subscription = null
 let lastState = { active: false, paused: false, speed: 0, speedValue: '1.0', ready: false, error: '' }
 let lastError = ''
 let shuttingDown = false
+let showIdle = false
 
 app.disableHardwareAcceleration()
 app.setDesktopName('read-aloud.desktop')
@@ -38,8 +39,9 @@ function applyState(line) {
   if (!window || window.isDestroyed()) return
   window.webContents.send('state', lastState)
   if (lastState.active) {
+    showIdle = false
     if (!window.isVisible()) window.showInactive()
-  } else if (window.isVisible()) {
+  } else if (!showIdle && window.isVisible()) {
     window.hide()
   }
   if (error && error !== lastError) notify(error)
@@ -68,7 +70,8 @@ function createWindow() {
     width: 344, height: 64, minWidth: 320, minHeight: 64,
     x: area.x + area.width - 368, y: area.y + area.height - 88,
     frame: false, resizable: false, show: false, skipTaskbar: true,
-    alwaysOnTop: true, icon: path.join(build, 'logo.png'),
+    alwaysOnTop: true,
+    icon: path.join(build, 'logo.png'),
     webPreferences: { preload: path.join(root, 'electron/preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
   window.setVisibleOnAllWorkspaces(true)
@@ -76,26 +79,43 @@ function createWindow() {
   window.webContents.on('did-finish-load', () => window.webContents.send('state', lastState))
 }
 
+function showWindow() {
+  if (!lastState.active) showIdle = true
+  if (!window || window.isDestroyed()) return
+  const reveal = () => {
+    if (!window || window.isDestroyed() || (!showIdle && !lastState.active)) return
+    window.show()
+    window.focus()
+  }
+  if (window.webContents.isLoadingMainFrame()) window.webContents.once('did-finish-load', reveal)
+  else reveal()
+}
+
 ipcMain.on('action', (_event, name, value) => {
   if (name === 'pause') request('PAUSE')
   else if (name === 'stop') request('STOP')
   else if (name === 'speed' && Number.isInteger(value) && value >= 0 && value <= 4) request(`SPEED ${value}`)
+  else if (name === 'hide' && window && !window.isDestroyed()) { showIdle = false; window.hide() }
 })
 
 if (!app.requestSingleInstanceLock()) app.quit()
-else app.whenReady().then(() => {
-  createWindow()
-  daemon = spawn(path.join(build, 'read-aloud'), ['daemon'], { env: process.env, stdio: ['ignore', 'ignore', 'inherit'] })
-  daemon.on('error', (error) => { notify(`Could not start speech: ${error.message}`); app.quit() })
-  daemon.on('exit', (code) => {
-    if (!shuttingDown) {
-      if (code !== 0 && !lastError) notify(`Speech service stopped (${code ?? 'signal'})`)
-      shuttingDown = true
-      app.quit()
-    }
+else {
+  app.on('second-instance', (_event, argv) => { if (argv.includes('--show')) showWindow() })
+  app.whenReady().then(() => {
+    createWindow()
+    if (showIdle || process.argv.includes('--show')) showWindow()
+    daemon = spawn(path.join(build, 'read-aloud'), ['daemon'], { env: process.env, stdio: ['ignore', 'ignore', 'inherit'] })
+    daemon.on('error', (error) => { notify(`Could not start speech: ${error.message}`); app.quit() })
+    daemon.on('exit', (code) => {
+      if (!shuttingDown) {
+        if (code !== 0 && !lastError) notify(`Speech service stopped (${code ?? 'signal'})`)
+        shuttingDown = true
+        app.quit()
+      }
+    })
+    connect()
   })
-  connect()
-})
+}
 
 app.on('window-all-closed', () => {})
 app.on('before-quit', (event) => {

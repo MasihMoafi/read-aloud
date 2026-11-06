@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 export READ_ALOUD_BUILD="${READ_ALOUD_BUILD:-/run/media/masih/New Volume/dev/read-aloud}"
 cd "$root"
+command -v rsvg-convert >/dev/null || { printf '%s\n' 'rsvg-convert is required.' >&2; exit 1; }
 mountpoint -q '/run/media/masih/New Volume' || { printf '%s\n' 'Mount New Volume before building.' >&2; exit 1; }
 case "$READ_ALOUD_BUILD" in
   '/run/media/masih/New Volume/'*) ;;
@@ -22,7 +23,6 @@ node --check electron/main.cjs
 node --check electron/preload.cjs
 node --check scripts/build-ui.cjs
 node scripts/build-ui.cjs --check
-command -v rsvg-convert >/dev/null || { printf '%s\n' 'rsvg-convert is required for the app icon.' >&2; exit 1; }
 if [[ ! -x "$READ_ALOUD_BUILD/electron/electron" ]]; then
   electron_source="${READ_ALOUD_ELECTRON_SOURCE:-$HOME/Desktop/p/clocki/node_modules/electron/dist}"
   test -x "$electron_source/electron" || { printf '%s\n' 'The installed Electron runtime is missing.' >&2; exit 1; }

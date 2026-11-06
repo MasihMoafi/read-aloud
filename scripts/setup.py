@@ -46,9 +46,12 @@ def set_value(path, key, value):
 
 def install():
     build = Path(os.environ.get("READ_ALOUD_BUILD", "/run/media/masih/New Volume/dev/read-aloud"))
-    for item in (build / "read-aloud", build / "index.html", build / "player.js", build / "player.css", build / "logo.png", build / "logo.svg", ROOT / "assets/logo.svg"):
+    subprocess.run(["node", str(ROOT / "scripts/check-logo-approval.cjs")], check=True)
+    for item in (build / "read-aloud", build / "index.html", build / "player.js", build / "player.css", build / "logo.svg", build / "logo.png"):
         if not item.exists():
             raise RuntimeError(f"Build the app first: {item} is missing")
+    if (build / "logo.svg").read_bytes() != (ROOT / "assets/logo.svg").read_bytes():
+        raise RuntimeError("Build the app first: its logo is out of date")
     current = paths()
     for path in current:
         if path in OWN:
@@ -72,9 +75,10 @@ def install():
         settings("set", SCHEMA, "custom-keybindings", repr(current + [p for p in sorted(OWN) if p not in current]))
         for path in entries:
             path.parent.mkdir(parents=True, exist_ok=True)
+            show = " --show" if path == LAUNCHER else ""
             path.write_text(
                 "[Desktop Entry]\nType=Application\nName=Read Aloud\nComment=Read selected text with Super+R\n"
-                f"Exec={ROOT}/scripts/start.sh\nIcon={ROOT}/assets/logo.svg\n"
+                f"Exec={ROOT}/scripts/start.sh{show}\nIcon={ROOT}/assets/logo.svg\n"
                 f"X-GNOME-Autostart-enabled=true\n{MARKER}\n"
             )
     except Exception:
