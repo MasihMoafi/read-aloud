@@ -14,6 +14,9 @@ let lastState = { active: false, paused: false, speed: 0, speedValue: '1.0', rea
 let lastError = ''
 let shuttingDown = false
 let showIdle = false
+// The bar stays put; the speed menu opens the window upward above it.
+const BAR = { width: 176, height: 40 }
+const MENU_HEIGHT = 148
 
 app.disableHardwareAcceleration()
 app.setDesktopName('read-aloud.desktop')
@@ -67,8 +70,8 @@ function connect() {
 function createWindow() {
   const area = screen.getPrimaryDisplay().workArea
   window = new BrowserWindow({
-    width: 344, height: 64, minWidth: 320, minHeight: 64,
-    x: area.x + area.width - 368, y: area.y + area.height - 88,
+    width: BAR.width, height: BAR.height,
+    x: area.x + area.width - BAR.width - 24, y: area.y + area.height - BAR.height - 24,
     frame: false, resizable: false, show: false, skipTaskbar: true,
     alwaysOnTop: true,
     icon: path.join(build, 'logo.png'),
@@ -94,8 +97,16 @@ function showWindow() {
 ipcMain.on('action', (_event, name) => {
   if (name === 'pause') request('PAUSE')
   else if (name === 'stop') request('STOP')
-  else if (name === 'faster') request('FASTER')
   else if (name === 'hide' && window && !window.isDestroyed()) { showIdle = false; window.hide() }
+})
+
+ipcMain.on('speed', (_event, index) => { if (Number.isInteger(index)) request(`SPEED ${index}`) })
+
+ipcMain.on('menu', (_event, open) => {
+  if (!window || window.isDestroyed()) return
+  const bounds = window.getBounds()
+  const height = BAR.height + (open ? MENU_HEIGHT : 0)
+  window.setBounds({ ...bounds, y: bounds.y + bounds.height - height, height })
 })
 
 if (!app.requestSingleInstanceLock()) app.quit()
