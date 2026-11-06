@@ -137,6 +137,27 @@ def main():
                 except ProcessLookupError:
                     pass
 
+        def read_selection():
+            selection = b"Launcher visibility test."
+            owner = subprocess.Popen(["xclip", "-quiet", "-selection", "primary"], env=env,
+                                     stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.DEVNULL, start_new_session=True)
+            try:
+                owner.stdin.write(selection)
+                owner.stdin.close()
+
+                def selected():
+                    result = subprocess.run(["xclip", "-out", "-selection", "primary"], env=env,
+                                            capture_output=True, timeout=2)
+                    return result.returncode == 0 and result.stdout == selection
+
+                wait_for(selected, "selected text")
+                subprocess.run([str(ROOT / "scripts/shortcut.sh"), "read"], env=env, check=True, timeout=15)
+            finally:
+                if owner.poll() is None:
+                    os.killpg(owner.pid, signal.SIGTERM)
+                owner.wait(timeout=5)
+
         process = launch(show=True)
         wait_for(lambda: socket_path.exists() and debug_ready() and visible(), "cold launcher window")
         snapshot = appctl("see", "elpis")
@@ -148,7 +169,7 @@ def main():
         reopen()
         wait_for(visible, "window reopened by launcher")
 
-        send(socket_path, "READ", "Launcher visibility test.")
+        read_selection()
         send(socket_path, "PAUSE")
         wait_for(lambda: "button \"Stop\"" in appctl("see", "elpis"), "active player")
         screenshots("player")

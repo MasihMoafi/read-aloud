@@ -1,6 +1,5 @@
 const fs = require('node:fs')
 const path = require('node:path')
-const { execFileSync } = require('node:child_process')
 const { createRequire } = require('node:module')
 const checkLogoApproval = require('./check-logo-approval.cjs')
 
@@ -11,6 +10,7 @@ const fromModules = createRequire(path.join(modules, 'placeholder.js'))
 const esbuild = require('/usr/local/node/lib/node_modules/vercel/node_modules/esbuild')
 const postcss = fromModules('postcss')
 const tailwind = fromModules('@tailwindcss/postcss')
+const sharp = fromModules('sharp')
 const design = JSON.parse(fs.readFileSync(path.join(root, 'design/design.json'), 'utf8'))
 const variables = (values) => Object.entries(values).map(([key, value]) => `--${key}:${value};`).join('')
 
@@ -47,7 +47,9 @@ async function build() {
   fs.writeFileSync(path.join(out, 'player.css'), css.css)
   fs.copyFileSync(path.join(root, 'renderer/index.html'), path.join(out, 'index.html'))
   fs.copyFileSync(path.join(root, 'assets/logo.svg'), path.join(out, 'logo.svg'))
-  execFileSync('rsvg-convert', ['-w', '256', '-h', '256', '-o', path.join(out, 'logo.png'), path.join(out, 'logo.svg')])
+  await sharp(path.join(out, 'logo.svg')).resize(256, 256, {
+    fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 },
+  }).png().toFile(path.join(out, 'logo.png'))
 }
 
 build().catch((error) => { console.error(error); process.exitCode = 1 })

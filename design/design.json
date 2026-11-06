@@ -3,16 +3,16 @@
     "background": "#f7f7f5",
     "foreground": "#181a1d",
     "muted": "#d5d8da",
-    "primary": "#254dc0",
-    "ring": "#254dc0",
+    "primary": "#147d78",
+    "ring": "#147d78",
     "border": "#81868d"
   },
   "dark": {
     "background": "#202226",
     "foreground": "#f7f7f5",
     "muted": "#646a73",
-    "primary": "#a8bfff",
-    "ring": "#a8bfff",
+    "primary": "#82d7c8",
+    "ring": "#82d7c8",
     "border": "#838992"
   }
 }

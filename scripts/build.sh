@@ -4,7 +4,6 @@ set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 export READ_ALOUD_BUILD="${READ_ALOUD_BUILD:-/run/media/masih/New Volume/dev/read-aloud}"
 cd "$root"
-command -v rsvg-convert >/dev/null || { printf '%s\n' 'rsvg-convert is required.' >&2; exit 1; }
 mountpoint -q '/run/media/masih/New Volume' || { printf '%s\n' 'Mount New Volume before building.' >&2; exit 1; }
 case "$READ_ALOUD_BUILD" in
   '/run/media/masih/New Volume/'*) ;;
