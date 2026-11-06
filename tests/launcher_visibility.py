@@ -39,6 +39,25 @@ def visible():
     return bool(result.stdout.strip())
 
 
+def wm_close():
+    """Ask the window to close the way a window manager does (WM_DELETE_WINDOW)."""
+    from Xlib import X, display, protocol
+
+    result = subprocess.run(
+        ["xdotool", "search", "--onlyvisible", "--name", "^Read Aloud$"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    screen = display.Display()
+    window = screen.create_resource_object("window", int(result.stdout.split()[0]))
+    protocols, delete = screen.intern_atom("WM_PROTOCOLS"), screen.intern_atom("WM_DELETE_WINDOW")
+    event = protocol.event.ClientMessage(window=window, client_type=protocols, data=(32, [delete, X.CurrentTime, 0, 0, 0]))
+    window.send_event(event)
+    screen.flush()
+    screen.close()
+
+
 def send(path, name, body=""):
     with socket.socket(socket.AF_UNIX) as client:
         client.settimeout(3)
@@ -136,7 +155,10 @@ def main():
                             "el => getComputedStyle(el).backgroundColor"
                         )
                     )
-                    page.screenshot(path=str(Path(proof) / f"{name}-{theme}.png"), omit_background=True)
+                    page.screenshot(
+                        path=str(Path(proof) / f"{name}-{theme}.png"),
+                        omit_background=True,
+                    )
                 assert backgrounds[0] != backgrounds[1], (
                     "Light and dark themes look the same"
                 )
@@ -205,15 +227,18 @@ def main():
             "cold launcher window",
         )
         snapshot = appctl("see", "elpis")
-        assert (
-            "Read Aloud" in snapshot and "Super+R to read" in snapshot
-        ), snapshot
+        assert "Read Aloud" in snapshot and "Super+R to read" in snapshot, snapshot
         screenshots("idle")
         appctl("click", "elpis", "role:button=Close")
         wait_for(lambda: not visible(), "closed window to hide")
         assert process.poll() is None, "Close stopped the resident app"
         reopen()
         wait_for(visible, "window reopened by launcher")
+        # A window-manager close (Alt+F4) must hide the window, not destroy it.
+        wm_close()
+        wait_for(lambda: not visible(), "window-manager close to hide")
+        reopen()
+        wait_for(visible, "window reopened after a window-manager close")
 
         read_selection()
         send(socket_path, "PAUSE")
