@@ -15,8 +15,8 @@ let lastError = ''
 let shuttingDown = false
 let showIdle = false
 // The bar stays put; the speed menu opens the window upward above it.
-const BAR = { width: 176, height: 40 }
-const MENU_HEIGHT = 148
+const BAR = { width: 184, height: 40 }
+const MENU_HEIGHT = 156
 
 app.disableHardwareAcceleration()
 app.setDesktopName('read-aloud.desktop')
@@ -73,7 +73,7 @@ function createWindow() {
     width: BAR.width, height: BAR.height,
     x: area.x + area.width - BAR.width - 24, y: area.y + area.height - BAR.height - 24,
     frame: false, resizable: false, show: false, skipTaskbar: true,
-    alwaysOnTop: true,
+    alwaysOnTop: true, transparent: true, backgroundColor: '#00000000',
     icon: path.join(build, 'logo.png'),
     webPreferences: { preload: path.join(root, 'electron/preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
