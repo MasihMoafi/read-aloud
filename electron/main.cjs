@@ -77,6 +77,13 @@ function createWindow() {
     icon: path.join(build, 'logo.png'),
     webPreferences: { preload: path.join(root, 'electron/preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
+  // Closing from the window manager (Alt+F4, title menu) must only hide: the launcher reopens this window.
+  window.on('close', (event) => {
+    if (shuttingDown) return
+    event.preventDefault()
+    showIdle = false
+    window.hide()
+  })
   window.setVisibleOnAllWorkspaces(true)
   window.loadFile(path.join(build, 'index.html'))
   window.webContents.on('did-finish-load', () => window.webContents.send('state', lastState))
