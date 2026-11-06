@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@source ".";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--background);
+  --color-ring: var(--ring);
+  --color-border: var(--border);
+  --color-accent: var(--muted);
+  --color-accent-foreground: var(--foreground);
+}
+
+html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+body { margin: 0; font-family: system-ui, sans-serif; }
+.player { -webkit-app-region: drag; }
+button, [data-slot="slider"] { -webkit-app-region: no-drag; }
