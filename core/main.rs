@@ -77,6 +77,152 @@ fn socket_path() -> PathBuf {
     runtime_dir().join("daemon.sock")
 }
 
+/// The words a reader would say: Markdown and HTML markup is dropped so it is never spoken
+/// ("**bold**" reads "bold"; "[text](url)" reads "text"; headings, list markers, quotes, code fences,
+/// task boxes, table rules and highlight markers disappear). An asterisk between spaces ("2 * 3") stays.
+fn speakable(text: &str) -> String {
+    let mut lines = Vec::new();
+    for raw in text.lines() {
+        let mut line = raw.trim();
+        if line.starts_with("```") || line.starts_with("~~~") {
+            continue;
+        }
+        // Table separator rows such as |---|:--:|
+        if line.contains('-') && line.chars().all(|c| matches!(c, '|' | '-' | ':' | ' ')) {
+            continue;
+        }
+        loop {
+            let before = line;
+            line = line.trim_start_matches('>').trim_start();
+            line = line.trim_start_matches('#').trim_start();
+            for marker in ["- ", "* ", "+ "] {
+                if let Some(rest) = line.strip_prefix(marker) {
+                    line = rest.trim_start();
+                }
+            }
+            for task in ["[ ] ", "[x] ", "[X] "] {
+                if let Some(rest) = line.strip_prefix(task) {
+                    line = rest;
+                }
+            }
+            if line == before {
+                break;
+            }
+        }
+        lines.push(inline_speakable(line));
+    }
+    lines.join("\n")
+}
+
+fn inline_speakable(line: &str) -> String {
+    let chars: Vec<char> = line.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        // HTML tags such as <mark style="..."> and </mark>
+        if c == '<' {
+            if let Some(end) = chars[i..].iter().position(|&x| x == '>') {
+                let first = chars.get(i + 1).copied().unwrap_or(' ');
+                if first == '/' || first.is_ascii_alphabetic() {
+                    i += end + 1;
+                    continue;
+                }
+            }
+        }
+        // Wiki links [[Note]] or [[Note|shown]] read the shown name
+        if c == '[' && chars.get(i + 1) == Some(&'[') {
+            if let Some(end) = (i + 2..chars.len().saturating_sub(1))
+                .find(|&j| chars[j] == ']' && chars[j + 1] == ']')
+            {
+                let inner: String = chars[i + 2..end].iter().collect();
+                out.push_str(inner.rsplit('|').next().unwrap_or(&inner));
+                i = end + 2;
+                continue;
+            }
+        }
+        // Links [text](url) and images ![alt](url) read their text
+        if c == '[' || (c == '!' && chars.get(i + 1) == Some(&'[')) {
+            let open = if c == '!' { i + 1 } else { i };
+            if let Some(close) = (open + 1..chars.len()).find(|&j| chars[j] == ']') {
+                if chars.get(close + 1) == Some(&'(') {
+                    if let Some(end) = (close + 2..chars.len()).find(|&j| chars[j] == ')') {
+                        out.extend(&chars[open + 1..close]);
+                        i = end + 1;
+                        continue;
+                    }
+                }
+            }
+        }
+        // Emphasis, strike, highlight and code markers; a lone '*' between spaces and snake_case stay
+        if matches!(c, '*' | '_' | '~' | '=' | '`') {
+            let mut j = i;
+            while j < chars.len() && chars[j] == c {
+                j += 1;
+            }
+            let space_before = i == 0 || chars[i - 1].is_whitespace();
+            let space_after = j == chars.len() || chars[j].is_whitespace();
+            let marker = match c {
+                '*' => !(space_before && space_after),
+                '_' => space_before != space_after,
+                '~' | '=' => j - i >= 2,
+                _ => true,
+            };
+            if marker {
+                i = j;
+                continue;
+            }
+        }
+        // Rustidian's color markers (==🟢text==) are not words
+        if matches!(c, '🟢' | '🔵' | '🟣' | '🟠' | '🟡' | '🔴') {
+            i += 1;
+            continue;
+        }
+        out.push(if c == '|' { ' ' } else { c });
+        i += 1;
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+#[cfg(test)]
+mod speakable_tests {
+    use super::speakable;
+
+    #[test]
+    fn markup_is_not_spoken() {
+        assert_eq!(
+            speakable("This is **really** important."),
+            "This is really important."
+        );
+        assert_eq!(
+            speakable("## Heading\n- [ ] a *task* with `code`"),
+            "Heading\na task with code"
+        );
+        assert_eq!(
+            speakable("See [the docs](https://x.y) and ![logo](a.png)."),
+            "See the docs and logo."
+        );
+        assert_eq!(
+            speakable("> quoted ~~old~~ ==marked== [[Note|shown]]"),
+            "quoted old marked shown"
+        );
+        assert_eq!(speakable("| a | b |\n|---|---|\n| 1 | 2 |"), "a b\n1 2");
+        assert_eq!(speakable("```rust\nlet x = 1;\n```"), "let x = 1;");
+        assert_eq!(
+            speakable("- ==🟢Ship it== <mark style=\"background: #ec4899;\">today</mark>"),
+            "Ship it today"
+        );
+    }
+
+    #[test]
+    fn ordinary_text_is_kept() {
+        assert_eq!(
+            speakable("Two * three is six; my_var stays; 1. First point."),
+            "Two * three is six; my_var stays; 1. First point."
+        );
+    }
+}
+
 fn split_sentences(text: &str) -> Vec<String> {
     let mut result = Vec::new();
     let mut sentence = String::new();
@@ -269,7 +415,7 @@ impl Engine {
     fn on_event(&mut self, event: Event) -> bool {
         match event {
             Event::Read(text) => {
-                let sentences = split_sentences(&text);
+                let sentences = split_sentences(&speakable(&text));
                 if sentences.is_empty() {
                     return true;
                 }

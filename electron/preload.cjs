@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld('readAloud', {
   voiceStatus: () => ipcRenderer.invoke('voice-status'),
   selectVoice: (name) => ipcRenderer.invoke('voice-select', name),
   menu: (name) => ipcRenderer.send('menu', name),
+  barWidth: (width) => ipcRenderer.send('bar-width', width),
 })

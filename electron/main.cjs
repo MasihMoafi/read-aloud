@@ -18,6 +18,7 @@ let showIdle = false
 // The bar stays put; menus open the window upward above it.
 const BAR = { width: 204, height: 40 }
 const MENU_HEIGHT = { speed: 156, voice: 280 }
+const MENU_WIDTH = 168
 const runFile = promisify(execFile)
 
 app.disableHardwareAcceleration()
@@ -127,12 +128,28 @@ ipcMain.handle('voice-select', (_event, name) => {
   return voiceCommand('select', name)
 })
 
-ipcMain.on('menu', (_event, menu) => {
+// The bar is as wide as its controls (the renderer measures them); menus need room for voice names.
+// Resizing keeps the right edge and the bottom where they are.
+let barWidth = BAR.width
+let openMenu = null
+function fitWindow() {
   if (!window || window.isDestroyed()) return
-  if (menu !== null && menu !== 'speed' && menu !== 'voice') return
   const bounds = window.getBounds()
-  const height = BAR.height + (menu ? MENU_HEIGHT[menu] : 0)
-  window.setBounds({ ...bounds, y: bounds.y + bounds.height - height, height })
+  const width = openMenu ? Math.max(barWidth, MENU_WIDTH) : barWidth
+  const height = BAR.height + (openMenu ? MENU_HEIGHT[openMenu] : 0)
+  window.setBounds({ x: bounds.x + bounds.width - width, y: bounds.y + bounds.height - height, width, height })
+}
+
+ipcMain.on('menu', (_event, menu) => {
+  if (menu !== null && menu !== 'speed' && menu !== 'voice') return
+  openMenu = menu
+  fitWindow()
+})
+
+ipcMain.on('bar-width', (_event, width) => {
+  if (!Number.isFinite(width)) return
+  barWidth = Math.min(400, Math.max(96, Math.ceil(width)))
+  fitWindow()
 })
 
 if (!app.requestSingleInstanceLock()) app.quit()
