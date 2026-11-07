@@ -19,7 +19,6 @@ mkdir -p "$READ_ALOUD_BUILD"
 rustfmt --edition 2021 --check core/main.rs
 python3 -c 'import ast,pathlib; ast.parse(pathlib.Path("worker/kokoro.py").read_text())'
 node --check electron/main.cjs
-node --check electron/preload.cjs
 node --check scripts/build-ui.cjs
 node scripts/build-ui.cjs --check
 # Read Aloud's own Electron, pinned in package.json (npm install); the runtime is refreshed when that version changes.

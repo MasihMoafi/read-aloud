@@ -1,7 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('readAloud', {
-  onState: (listener) => ipcRenderer.on('state', (_event, state) => listener(state)),
+  onState: (listener) => {
+    ipcRenderer.on('state', (_event, state) => listener(state))
+    ipcRenderer.send('state-request')
+  },
   action: (name) => ipcRenderer.send('action', name),
   setSpeed: (index) => ipcRenderer.send('speed', index),
   voiceStatus: () => ipcRenderer.invoke('voice-status'),

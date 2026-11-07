@@ -32,7 +32,9 @@ test('model downloads verify bytes and keep failures out of the final path', asy
   assert.deepEqual(await readdir(directory), [])
   await assert.rejects(downloadModelFiles(directory, file('partial')), /interrupted/i)
   assert.deepEqual(await readdir(directory), [])
-  await assert.rejects(downloadModelFiles(directory, file('offline')), /network unavailable/i)
+  const offlineProgress: number[] = []
+  await assert.rejects(downloadModelFiles(directory, file('offline'), (state) => offlineProgress.push(state.received)), /network unavailable/i)
+  assert.deepEqual(offlineProgress, [0], 'progress appears before the network request fails')
   assert.deepEqual(await readdir(directory), [])
   const progress: number[] = []
   await downloadModelFiles(directory, file('good'), (state) => progress.push(state.received))

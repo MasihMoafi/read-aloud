@@ -3,14 +3,14 @@ import { createRoot } from "react-dom/client"
 import { AudioLines, Check, Pause, Play, Square, X, Zap } from "lucide-react"
 import { Button } from "./components/button"
 
-type PlayerState = { active: boolean; paused: boolean; speed: number; speedValue: string; ready: boolean; error: string }
+type PlayerState = { active: boolean; paused: boolean; speed: number; speedValue: string; ready: boolean; error: string; download: { phase: "checking" | "downloading" | "failed" | "ready"; percent: number; error: string } }
 type Voices = { voices: string[]; selected: string }
 type Menu = "speed" | "voice" | null
 declare global {
   interface Window {
     readAloud: {
       onState: (listener: (state: PlayerState) => void) => void
-      action: (name: "pause" | "stop" | "hide") => void
+      action: (name: "pause" | "stop" | "hide" | "retry") => void
       setSpeed: (index: number) => void
       voiceStatus: () => Promise<Voices>
       selectVoice: (name: string) => Promise<Voices>
@@ -81,7 +81,7 @@ function VoiceMenu({ data, open, saving, toggle, onSelect }: {
 }
 
 function Player() {
-  const [state, setState] = React.useState<PlayerState>({ active: false, paused: false, speed: 0, speedValue: "1.0", ready: false, error: "" })
+  const [state, setState] = React.useState<PlayerState>({ active: false, paused: false, speed: 0, speedValue: "1.0", ready: false, error: "", download: { phase: "checking", percent: 0, error: "" } })
   const [voices, setVoices] = React.useState<Voices | null>(null)
   const [menu, setMenu] = React.useState<Menu>(null)
   const [savingVoice, setSavingVoice] = React.useState(false)
@@ -99,7 +99,9 @@ function Player() {
     return () => observer.disconnect()
   }, [])
   React.useEffect(() => window.readAloud.onState(setState), [])
-  React.useEffect(() => { window.readAloud.voiceStatus().then(setVoices).catch(() => {}) }, [])
+  React.useEffect(() => {
+    if (state.download.phase === "ready") window.readAloud.voiceStatus().then(setVoices).catch(() => {})
+  }, [state.download.phase])
   React.useEffect(() => { window.readAloud.menu(menu) }, [menu])
   React.useEffect(() => {
     if (!menu) return
@@ -133,7 +135,13 @@ function Player() {
       <span className="flex size-7 shrink-0 items-center justify-center">
         <span className="logo size-[18px] bg-primary" role="img" aria-label="Read Aloud" />
       </span>
-      {!state.active ? <>
+      {state.download.phase !== "ready" ? <>
+        <span role="status" title={state.download.error} className="whitespace-nowrap px-1 text-xs text-foreground/70">
+          {state.download.phase === "failed" ? "Voice download failed" : state.download.phase === "checking" ? "Checking voice…" : `Downloading voice… ${state.download.percent}%`}
+        </span>
+        {state.download.phase === "failed" && <Button variant="ghost" className="h-7 rounded-lg px-2 text-xs" onClick={() => window.readAloud.action("retry")}>Retry</Button>}
+        <Button variant="ghost" aria-label="Close" className={icon} onClick={() => window.readAloud.action("hide")}><X aria-hidden="true" /></Button>
+      </> : !state.active ? <>
         <span className="whitespace-nowrap px-1 text-xs text-foreground/70">Super+R to read</span>
         <VoiceMenu data={voices} open={menu === "voice"} saving={savingVoice} toggle={() => toggle("voice")} onSelect={selectVoice} />
         <Button variant="ghost" aria-label="Close" className={icon} onClick={() => window.readAloud.action("hide")}>

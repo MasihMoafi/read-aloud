@@ -36,6 +36,11 @@ async function build() {
   if (process.argv[2] === '--check') return
   fs.mkdirSync(out, { recursive: true })
   await esbuild.build({
+    entryPoints: { main: path.join(root, 'electron/main.ts'), preload: path.join(root, 'electron/preload.ts') },
+    bundle: true, platform: 'node', format: 'cjs', target: 'node22',
+    external: ['electron'], outdir: out, outExtension: { '.js': '.cjs' },
+  })
+  await esbuild.build({
     entryPoints: [path.join(root, 'renderer/player.tsx')],
     bundle: true, platform: 'browser', format: 'iife', target: 'chrome120',
     nodePaths: [modules], outfile: path.join(out, 'player.js'),

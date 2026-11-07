@@ -9,10 +9,10 @@ export type ModelFile = { name: string; url: string; sha256: string }
 export type DownloadProgress = { name: string; received: number; total: number | null }
 
 const release = 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0'
-export const MODEL_FILES: ModelFile[] = [
-  { name: 'kokoro-v1.0.onnx', url: `${release}/kokoro-v1.0.onnx`, sha256: '7d5df8ecf7d4b1878015a32686053fd0eebe2bc377234608764cc0ef3636a6c5' },
-  { name: 'voices-v1.0.bin', url: `${release}/voices-v1.0.bin`, sha256: 'bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d' },
-]
+export const MODEL_FILES = [
+  { name: 'kokoro-v1.0.onnx', url: `${release}/kokoro-v1.0.onnx`, sha256: '7d5df8ecf7d4b1878015a32686053fd0eebe2bc377234608764cc0ef3636a6c5', size: 325532387 },
+  { name: 'voices-v1.0.bin', url: `${release}/voices-v1.0.bin`, sha256: 'bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d', size: 28214398 },
+] satisfies (ModelFile & { size: number })[]
 
 async function matches(path: string, expected: string): Promise<boolean> {
   const hash = createHash('sha256')
@@ -34,6 +34,7 @@ export async function downloadModelFiles(directory: string, files: ModelFile[], 
     if (await matches(destination, file.sha256)) continue
     const temporary = join(directory, `.${file.name}.${randomUUID()}.partial`)
     try {
+      onProgress({ name: file.name, received: 0, total: null })
       const response = await fetch(file.url, { signal: AbortSignal.timeout(600_000) })
       if (!response.ok || !response.body) throw new Error(`Download failed for ${file.name}: HTTP ${response.status}`)
       const length = response.headers.get('content-length')
