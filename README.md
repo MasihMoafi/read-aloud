@@ -19,7 +19,7 @@ the app uses the system output.
 
 ## Setup
 
-This machine already has the Kokoro model, CUDA libraries,
+This machine already has the Kokoro model, a Python environment,
 PipeWire, and the packages used to build the player. No
 download is needed for the following commands:
 

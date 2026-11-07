@@ -2,7 +2,7 @@
 
 Goal: Read selected English text on GNOME with a shortcut and a small player.
 
-Constraints: Follow [BRIEF.md](BRIEF.md); reuse installed software without downloading. Keep synthesis local on CUDA and build output on New Volume.
+Constraints: Follow [BRIEF.md](BRIEF.md). Keep synthesis local on CPU and local build output on New Volume. Distribution acceptance checks are in [packaging/SPEC.md](packaging/SPEC.md).
 
 Unless noted, statuses describe offscreen checks; Masih's selected-text desktop check remains open.
 
@@ -21,7 +21,7 @@ Unless noted, statuses describe offscreen checks; Masih's selected-text desktop 
 | 11 | Opening | Opening Read Aloud from the launcher shows a window with the shortcut; login startup stays hidden. Reopening an already running app shows it again. | offscreen checked |
 | 12 | Local voices | Choose a bundled English voice from the idle or playing player; future synthesis uses it and the choice survives restart. Already buffered audio may finish in the previous voice. No download or account is needed. | installed player and two voices checked offscreen; Masih's audible check pending |
 
-Plan: A Rust daemon coordinates a resident Python Kokoro worker and PipeWire playback. An Electron window connects over a private local socket. GNOME shortcuts invoke a small client of the same Rust binary. This keeps the GPU model loaded and isolates playback from the UI.
+Plan: A Rust daemon coordinates a resident Python Kokoro worker and PipeWire playback. An Electron window connects over a private local socket. GNOME shortcuts invoke a small client of the same Rust binary. This keeps the model loaded and isolates playback from the UI.
 
 | Task | Importance | Difficulty | Done check |
 | --- | --- | --- | --- |

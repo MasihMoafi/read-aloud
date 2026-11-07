@@ -600,23 +600,25 @@ impl Drop for Engine {
 }
 
 fn worker(tx: Sender<Event>, root: &Path) -> io::Result<(Child, ChildStdin)> {
-    let home = PathBuf::from(env::var_os("HOME").unwrap());
-    let nvidia = home.join("miniconda3/lib/python3.13/site-packages/nvidia");
-    let mut libs: Vec<PathBuf> = fs::read_dir(nvidia)?
-        .filter_map(Result::ok)
-        .map(|e| e.path().join("lib"))
-        .filter(|p| p.is_dir())
-        .collect();
-    if let Some(existing) = env::var_os("LD_LIBRARY_PATH") {
-        libs.extend(env::split_paths(&existing));
-    }
-    let libraries = env::join_paths(libs).map_err(io::Error::other)?;
-    let mut command = Command::new(home.join(".local/share/rustidian/kokoro-venv/bin/python"));
+    let python = env::var_os("READ_ALOUD_PYTHON")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            let bundled = root.join("runtime/bin/python");
+            let local = PathBuf::from(env::var_os("HOME").unwrap_or_default())
+                .join(".local/share/rustidian/kokoro-venv/bin/python");
+            if bundled.is_file() {
+                bundled
+            } else if local.is_file() {
+                local
+            } else {
+                PathBuf::from("python3")
+            }
+        });
+    let mut command = Command::new(python);
     command
         .arg("-u")
         .arg(root.join("worker/kokoro.py"))
-        .env("LD_LIBRARY_PATH", libraries)
-        .env("ONNX_PROVIDER", "CUDAExecutionProvider")
+        .env("ONNX_PROVIDER", "CPUExecutionProvider")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped());
     child_dies_with_parent(&mut command);
@@ -627,7 +629,7 @@ fn worker(tx: Sender<Event>, root: &Path) -> io::Result<(Child, ChildStdin)> {
         for line in BufReader::new(output).lines().map_while(Result::ok) {
             let parts: Vec<&str> = line.splitn(4, '\t').collect();
             let event = match parts.as_slice() {
-                ["READY", "CUDAExecutionProvider"] => Some(Event::WorkerReady),
+                ["READY", "CPUExecutionProvider"] => Some(Event::WorkerReady),
                 ["DONE", generation, index, elapsed] => generation
                     .parse()
                     .ok()

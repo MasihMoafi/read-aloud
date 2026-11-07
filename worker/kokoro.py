@@ -27,11 +27,11 @@ def main():
         str(model_path),
         str(voice_bundle),
     )
-    if "CUDAExecutionProvider" not in model.sess.get_providers():
-        raise RuntimeError("Kokoro did not load the CUDA provider")
+    if "CPUExecutionProvider" not in model.sess.get_providers():
+        raise RuntimeError("Kokoro did not load the CPU provider")
     voice = selected_voice(voices)
     model.create("Ready.", voice=voice, speed=1.0, lang="en-gb" if voice.startswith("b") else "en-us")
-    print("READY\tCUDAExecutionProvider", flush=True)
+    print("READY\tCPUExecutionProvider", flush=True)
 
     for line in sys.stdin:
         generation, index = "0", "0"
