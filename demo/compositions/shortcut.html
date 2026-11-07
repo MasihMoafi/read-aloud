@@ -1,0 +1,15 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; pointer-events: none; }
+    #shortcut-cue { position: absolute; top: 140px; right: 165px; padding: 19px 28px; border: 2px solid #8fc7bd; border-radius: 14px; background: #f4fbf9; color: #145a53; font-size: 32px; font-weight: 700; letter-spacing: -.02em; }
+  </style>
+  <div data-hf-id="hf-2pmd" id="root" data-composition-id="shortcut" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-xxc9" id="shortcut-cue" class="clip" data-start="2.35" data-duration="1.6" data-track-index="0">Super + R</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#shortcut-cue", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: .22, ease: "power2.out" }, 2.35)
+      .to("#shortcut-cue", { opacity: 0, duration: .18 }, 3.74);
+    window.__timelines["shortcut"] = tl;
+  </script>
+</template>

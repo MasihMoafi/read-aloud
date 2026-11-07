@@ -1,0 +1,15 @@
+{
+  "ui": {
+    "electron/main.cjs": "efdc5d6932218ae0077e1ed9b08ccdc4e1b1c43b3ed45e0621bf62eeeca3585c",
+    "electron/preload.cjs": "0940e48477b34aebd6c4aac6d880c9f70501fc343a4fb54f6636218764284604",
+    "renderer/index.html": "7fc8583312aff7d53560a625d221451740105733ce846a733e2045405a9c093e",
+    "renderer/player.tsx": "e4b20fb3124efa5ed05123be132f1b18db41f2bb661a375540b40349f2f600d0",
+    "renderer/styles.css": "8f4fad1bca6602c3b4f147cb6e165859200302edbc7f8c1480a7e8c3a702274e",
+    "renderer/components/button.tsx": "472ea94564e9d933c9f5cc56f190b7f84dec09109e462e919c9e9b39bb513baa",
+    "assets/logo.svg": "95815110520c49bf33c43bbc9315ef4d54235a1c785aaf7128e2ec85f0e40749",
+    "build/player.js": "8d39ca2c76327990e4a6b36e9c110084b09f98c82cce59f9d8fa22a13db7edc2",
+    "build/player.css": "b2a2be0c9a63044b7e2cbb8eefd036871b8507240c9e7464da650cadd3a9cb35",
+    "build/logo.svg": "95815110520c49bf33c43bbc9315ef4d54235a1c785aaf7128e2ec85f0e40749"
+  },
+  "video_sha256": "f4a9c617e7df001d6f93e01d8e4ba7c2d63b3953759591343a489062d89cba6f"
+}

@@ -1,0 +1,21 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: #e4f1ed; color: #182a2a; }
+    #speed-copy { position: absolute; top: 338px; left: 190px; }
+    #speed-label { margin: 0 0 30px; color: #147d78; font-size: 30px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    #speed-title { margin: 0; font-size: 124px; line-height: 1.05; letter-spacing: -.05em; font-weight: 700; }
+    #speed-sub { margin: 35px 0 0; color: #506e68; font-size: 36px; }
+    #speed-player { position: absolute; top: 185px; left: 1080px; width: 650px; }
+    #speed-player img { width: 100%; display: block; }
+  </style>
+  <div data-hf-id="hf-ch7u" id="root" data-composition-id="speed" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-tt7o" id="speed-copy"><p data-hf-id="hf-vr72" id="speed-label">Set the pace</p><h2 data-hf-id="hf-1vh2" id="speed-title">Listen at<br data-hf-id="hf-x5px">your speed.</h2><p data-hf-id="hf-jq9j" id="speed-sub">From normal to 2×.</p></div>
+    <div data-hf-id="hf-zwrc" id="speed-player"><img data-hf-id="hf-6bfj" src="assets/player-menu.png" alt="Read Aloud speed menu"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#speed-copy", { x: -18, opacity: .45 }, { x: 0, opacity: 1, duration: .45, ease: "power2.out" }, 0)
+      .fromTo("#speed-player", { y: 20, opacity: .25 }, { y: 0, opacity: 1, duration: .5, ease: "power2.out" }, 0);
+    window.__timelines["speed"] = tl;
+  </script>
+</template>

@@ -1,0 +1,21 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: #f5f7f6; color: #182a2a; }
+    #outro-lockup { position: absolute; top: 354px; left: 465px; display: flex; align-items: center; gap: 48px; }
+    #outro-mark { width: 200px; height: 200px; }
+    #outro-mark img { width: 100%; height: 100%; display: block; }
+    #outro-name { margin: 0; font-size: 116px; font-weight: 700; letter-spacing: -.055em; }
+    #outro-line { position: absolute; left: 713px; top: 600px; margin: 0; color: #506e68; font-size: 36px; }
+  </style>
+  <div data-hf-id="hf-x7nm" id="root" data-composition-id="outro" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-50h1" id="outro-lockup"><div data-hf-id="hf-xn6o" id="outro-mark"><img data-hf-id="hf-t3bd" src="assets/logo.svg" alt=""></div><h2 data-hf-id="hf-4uxe" id="outro-name" data-var-text="app-name">Read Aloud</h2></div>
+    <p data-hf-id="hf-3gve" id="outro-line">Select text · Super + R</p>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#outro-mark", { scale: .82, opacity: .4 }, { scale: 1, opacity: 1, duration: .5, ease: "back.out(1.4)" }, 0)
+      .fromTo("#outro-name", { x: -18, opacity: .25 }, { x: 0, opacity: 1, duration: .5, ease: "power2.out" }, 0)
+      .fromTo("#outro-line", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: .4, ease: "power2.out" }, .4);
+    window.__timelines["outro"] = tl;
+  </script>
+</template>

@@ -1,7 +1,8 @@
 const { app, BrowserWindow, ipcMain, Notification, screen } = require('electron')
-const { spawn } = require('node:child_process')
+const { execFile, spawn } = require('node:child_process')
 const net = require('node:net')
 const path = require('node:path')
+const { promisify } = require('node:util')
 
 const root = process.env.READ_ALOUD_ROOT
 const build = process.env.READ_ALOUD_BUILD
@@ -14,9 +15,10 @@ let lastState = { active: false, paused: false, speed: 0, speedValue: '1.0', rea
 let lastError = ''
 let shuttingDown = false
 let showIdle = false
-// The bar stays put; the speed menu opens the window upward above it.
-const BAR = { width: 184, height: 40 }
-const MENU_HEIGHT = 156
+// The bar stays put; menus open the window upward above it.
+const BAR = { width: 204, height: 40 }
+const MENU_HEIGHT = { speed: 156, voice: 280 }
+const runFile = promisify(execFile)
 
 app.disableHardwareAcceleration()
 app.setDesktopName('read-aloud.desktop')
@@ -109,10 +111,27 @@ ipcMain.on('action', (_event, name) => {
 
 ipcMain.on('speed', (_event, index) => { if (Number.isInteger(index)) request(`SPEED ${index}`) })
 
-ipcMain.on('menu', (_event, open) => {
+async function voiceCommand(...args) {
+  try {
+    const { stdout } = await runFile('python3', [path.join(root, 'worker/voices.py'), ...args], { timeout: 5000 })
+    return JSON.parse(stdout)
+  } catch (error) {
+    notify('Local voices are unavailable. Check the installed voice bundle.')
+    throw error
+  }
+}
+
+ipcMain.handle('voice-status', () => voiceCommand('status'))
+ipcMain.handle('voice-select', (_event, name) => {
+  if (typeof name !== 'string') throw new Error('Invalid voice')
+  return voiceCommand('select', name)
+})
+
+ipcMain.on('menu', (_event, menu) => {
   if (!window || window.isDestroyed()) return
+  if (menu !== null && menu !== 'speed' && menu !== 'voice') return
   const bounds = window.getBounds()
-  const height = BAR.height + (open ? MENU_HEIGHT : 0)
+  const height = BAR.height + (menu ? MENU_HEIGHT[menu] : 0)
   window.setBounds({ ...bounds, y: bounds.y + bounds.height - height, height })
 })
 

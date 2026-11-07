@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id":"app-name","type":"string","label":"App name","default":"Read Aloud"}]'>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <script src="assets/gsap.min.js"></script>
+  <style>
+    @font-face { font-family: Inter; src: url("assets/fonts/inter-regular.otf"); font-weight: 400; }
+    @font-face { font-family: Inter; src: url("assets/fonts/inter-bold.otf"); font-weight: 700; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; }
+    body { font-family: Inter, sans-serif; background: #f5f7f6; color: #182a2a; }
+    #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+    #capture-view { position: absolute; inset: 0; z-index: 1; transform-origin: right bottom; }
+    #capture { position: absolute; inset: 0; width: 1920px; height: 1080px; object-fit: contain; }
+    #bar-before, #bar-after { position: absolute; left: 1578px; top: 984px; width: 306px; height: 60px; background: #e4eeeb url("assets/player-bar.png") center / 100% 100% no-repeat; z-index: 2; }
+    #menu-clean { position: absolute; left: 1578px; top: 750px; width: 306px; height: 294px; z-index: 2; background: url("assets/player-menu.png") center / 100% 100% no-repeat, linear-gradient(to bottom, transparent 0 231px, #e4eeeb 231px 100%), linear-gradient(to right, #fff 0 222px, #e4eeeb 222px 100%); }
+    #player-cursor { position: absolute; inset: 0; width: 1920px; height: 1080px; z-index: 3; clip-path: inset(1000px 72px 24px 1794px); }
+    #shortcut { z-index: 2; }
+    #intro, #speed, #outro { z-index: 3; }
+  </style>
+</head>
+<body>
+  <div data-hf-id="hf-esgm" id="root" data-composition-id="main" data-start="0" data-duration="17" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-3qxk" id="capture-view" data-layout-allow-overflow>
+      <video data-hf-id="hf-za3r" id="capture" class="clip" src="assets/capture.mp4" muted playsinline
+        data-start="2.8" data-duration="7" data-track-index="1"></video>
+      <!-- The Xvfb recording lacks a compositor. These real screenshots restore
+           the window's transparent corners; the pointer stays from the video. -->
+      <div data-hf-id="hf-eb2o" id="bar-before" class="clip" data-start="5.241" data-duration="1.413" data-track-index="5" data-layout-allow-occlusion></div>
+      <div data-hf-id="hf-fa4s" id="menu-clean" class="clip" data-start="6.654" data-duration="1.496" data-track-index="5" data-layout-allow-occlusion></div>
+      <div data-hf-id="hf-hagf" id="bar-after" class="clip" data-start="8.150" data-duration="0.820" data-track-index="5" data-layout-allow-occlusion></div>
+      <video data-hf-id="hf-gho3" id="player-cursor" class="clip" src="assets/capture.mp4" muted playsinline
+        data-start="6.604" data-duration="2.366" data-media-start="3.804" data-track-index="6"></video>
+    </div>
+    <div data-hf-id="hf-bal5" id="intro" class="clip" data-composition-id="intro" data-composition-src="compositions/intro.html"
+      data-start="0" data-duration="2.8" data-track-index="2" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div data-hf-id="hf-ypn6" id="shortcut" class="clip" data-composition-id="shortcut" data-composition-src="compositions/shortcut.html"
+      data-start="2.8" data-duration="7" data-track-index="2" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div data-hf-id="hf-29ho" id="speed" class="clip" data-composition-id="speed" data-composition-src="compositions/speed.html"
+      data-start="9.8" data-duration="3.4" data-track-index="2" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div data-hf-id="hf-0egv" id="outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html"
+      data-start="13.2" data-duration="3.8" data-track-index="2" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <audio data-hf-id="hf-kfqz" id="voice" class="clip" src="assets/speech.wav" data-start="5.590" data-duration="3.285"
+      data-track-index="3" data-volume="1.5"></audio>
+    <audio data-hf-id="hf-ximo" id="key" class="clip" src="assets/sfx/key-press.mp3" data-start="5.210" data-duration="0.4"
+      data-track-index="4" data-volume="0.12"></audio>
+    <audio data-hf-id="hf-d81f" id="click" class="clip" src="assets/sfx/click-soft.mp3" data-start="6.654" data-duration="0.365"
+      data-track-index="4" data-volume="0.12"></audio>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#capture-view", { scale: 1 }, { scale: 1.08, duration: 0.5, ease: "power2.inOut" }, 6.48)
+      .to("#capture-view", { scale: 1, duration: 0.48, ease: "power2.inOut" }, 8.001);
+    window.__timelines["main"] = tl;
+  </script>
+</body>
+</html>
