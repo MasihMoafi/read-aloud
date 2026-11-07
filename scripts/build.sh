@@ -22,9 +22,11 @@ node --check electron/main.cjs
 node --check electron/preload.cjs
 node --check scripts/build-ui.cjs
 node scripts/build-ui.cjs --check
-if [[ ! -x "$READ_ALOUD_BUILD/electron/electron" ]]; then
-  electron_source="${READ_ALOUD_ELECTRON_SOURCE:-$HOME/Desktop/p/clocki/node_modules/electron/dist}"
-  test -x "$electron_source/electron" || { printf '%s\n' 'The installed Electron runtime is missing.' >&2; exit 1; }
+# Read Aloud's own Electron, pinned in package.json (npm install); the runtime is refreshed when that version changes.
+electron_source="${READ_ALOUD_ELECTRON_SOURCE:-$root/node_modules/electron/dist}"
+test -x "$electron_source/electron" || { printf '%s\n' 'Electron is missing: run npm install.' >&2; exit 1; }
+if ! cmp -s "$electron_source/version" "$READ_ALOUD_BUILD/electron/version"; then
+  gio trash "$READ_ALOUD_BUILD/electron" 2>/dev/null || true
   mkdir -p "$READ_ALOUD_BUILD/electron"
   cp -r "$electron_source/." "$READ_ALOUD_BUILD/electron/"
 fi

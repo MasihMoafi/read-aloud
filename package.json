@@ -2,5 +2,8 @@
   "name": "read-aloud",
   "version": "0.1.0",
   "private": true,
-  "main": "electron/main.cjs"
+  "main": "electron/main.cjs",
+  "devDependencies": {
+    "electron": "36.9.5"
+  }
 }
