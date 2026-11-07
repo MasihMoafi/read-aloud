@@ -460,7 +460,7 @@ impl Engine {
             }
             Event::WorkerReady => {
                 self.ready = true;
-                eprintln!("Kokoro ready on CUDA");
+                eprintln!("Kokoro voice ready");
                 self.broadcast();
             }
             Event::Rendered(generation, index, elapsed) => {
