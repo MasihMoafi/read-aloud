@@ -15,6 +15,7 @@ declare global {
       voiceStatus: () => Promise<Voices>
       selectVoice: (name: string) => Promise<Voices>
       menu: (name: Menu) => void
+      barWidth: (width: number) => void
     }
   }
 }
@@ -86,6 +87,17 @@ function Player() {
   const [savingVoice, setSavingVoice] = React.useState(false)
   const savingVoiceRef = React.useRef(false)
   const wasActive = React.useRef(false)
+  const bar = React.useRef<HTMLElement>(null)
+  // The window is exactly as wide as the controls: no empty space at the end of the bar.
+  React.useEffect(() => {
+    const el = bar.current
+    if (!el) return
+    const report = () => window.readAloud.barWidth(el.getBoundingClientRect().width)
+    const observer = new ResizeObserver(report)
+    observer.observe(el)
+    report()
+    return () => observer.disconnect()
+  }, [])
   React.useEffect(() => window.readAloud.onState(setState), [])
   React.useEffect(() => { window.readAloud.voiceStatus().then(setVoices).catch(() => {}) }, [])
   React.useEffect(() => { window.readAloud.menu(menu) }, [menu])
@@ -117,12 +129,12 @@ function Player() {
   }
 
   return (
-    <main className={`player ${card} fixed inset-x-0 bottom-0 flex h-10 items-center gap-0.5 px-1.5`}>
+    <main ref={bar} className={`player ${card} fixed bottom-0 right-0 flex h-10 w-max items-center gap-0.5 px-1.5`}>
       <span className="flex size-7 shrink-0 items-center justify-center">
         <span className="logo size-[18px] bg-primary" role="img" aria-label="Read Aloud" />
       </span>
       {!state.active ? <>
-        <span className="min-w-0 flex-1 truncate px-1 text-xs text-foreground/70">Super+R to read</span>
+        <span className="whitespace-nowrap px-1 text-xs text-foreground/70">Super+R to read</span>
         <VoiceMenu data={voices} open={menu === "voice"} saving={savingVoice} toggle={() => toggle("voice")} onSelect={selectVoice} />
         <Button variant="ghost" aria-label="Close" className={icon} onClick={() => window.readAloud.action("hide")}>
           <X aria-hidden="true" />
