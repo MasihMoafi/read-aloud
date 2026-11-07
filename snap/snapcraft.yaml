@@ -1,0 +1,30 @@
+name: read-aloud
+base: core24
+version: '0.1.0'
+summary: Read selected English text aloud
+description: Read selected text with Kokoro speech on the CPU.
+grade: devel
+confinement: strict
+platforms:
+  amd64:
+apps:
+  read-aloud:
+    command: opt/read-aloud/read-aloud --no-sandbox
+    extensions: [gnome]
+    desktop: usr/share/applications/read-aloud.desktop
+    plugs:
+      - audio-playback # PipeWire/PulseAudio playback
+      - desktop # desktop integration
+      - wayland # Wayland display
+      - x11 # XWayland primary selection
+      - network # first-run voice download
+      - pipewire # pw-play and preferred output; connect manually
+      - browser-support # Chromium within Snap's confinement
+    # Selected text comes from X11, so home file access is not needed.
+parts:
+  app:
+    plugin: dump
+    source: staging/snap-root
+    stage-packages:
+      - xclip
+      - pipewire-bin

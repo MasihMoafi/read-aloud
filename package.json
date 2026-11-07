@@ -5,5 +5,7 @@
   "main": "electron/main.cjs",
   "devDependencies": {
     "electron": "36.9.5"
-  }
+  },
+  "description": "Read selected English text aloud",
+  "author": "Read Aloud contributors"
 }

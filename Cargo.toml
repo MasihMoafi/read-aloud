@@ -1,0 +1,8 @@
+[package]
+name = "read-aloud"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "read-aloud"
+path = "core/main.rs"

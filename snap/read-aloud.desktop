@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Read Aloud
+Comment=Read selected text with Super+R
+Exec=read-aloud --show
+Icon=${SNAP}/opt/read-aloud/resources/read-aloud/build/logo.png
+Type=Application
+Categories=Utility;

@@ -735,17 +735,21 @@ fn send(command: &str, data: Option<&str>, wait_for_start: bool, root: &Path) ->
     let mut stream = match UnixStream::connect(socket_path()) {
         Ok(stream) => stream,
         Err(error) if wait_for_start => {
-            Command::new(root.join("scripts/start.sh"))
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .spawn()?;
+            Command::new(
+                env::var_os("READ_ALOUD_START")
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| root.join("scripts/start.sh")),
+            )
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?;
             let start = Instant::now();
             loop {
                 if let Ok(stream) = UnixStream::connect(socket_path()) {
                     break stream;
                 }
-                if start.elapsed() > Duration::from_secs(15) {
+                if start.elapsed() > Duration::from_secs(600) {
                     return Err(error);
                 }
                 thread::sleep(Duration::from_millis(100));

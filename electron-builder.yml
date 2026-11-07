@@ -1,0 +1,43 @@
+appId: io.github.readaloud.desktop
+productName: Read Aloud
+executableName: read-aloud
+artifactName: read-aloud-${version}-${arch}.${ext}
+asar: true
+files:
+  - package.json
+  - staging/build/main.cjs
+extraMetadata:
+  main: staging/build/main.cjs
+extraResources:
+  - from: staging
+    to: read-aloud
+  - from: worker
+    to: read-aloud/worker
+  - from: scripts/desktop-setup.py
+    to: read-aloud/scripts/desktop-setup.py
+  - from: THIRD_PARTY_NOTICES.md
+    to: read-aloud/THIRD_PARTY_NOTICES.md
+linux:
+  target:
+    - deb
+    - AppImage
+  icon: staging/build/logo.png
+  category: Utility
+  synopsis: Read selected English text aloud
+  desktop:
+    entry:
+      Comment: Read selected text with Super+R
+deb:
+  maintainer: Read Aloud contributors <noreply@github.com>
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+    - xclip
+    - pipewire-bin

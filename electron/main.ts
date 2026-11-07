@@ -5,8 +5,12 @@ const path = require('node:path')
 const { promisify } = require('node:util')
 import { downloadModelFiles, MODEL_FILES } from './model-download'
 
-const root = process.env.READ_ALOUD_ROOT
-const build = process.env.READ_ALOUD_BUILD
+const root = process.env.READ_ALOUD_ROOT || path.join((process as NodeJS.Process & { resourcesPath: string }).resourcesPath, 'read-aloud')
+const build = process.env.READ_ALOUD_BUILD || path.join(root, 'build')
+const python = process.env.READ_ALOUD_PYTHON || (app.isPackaged ? path.join(root, 'runtime/bin/python3') : 'python3')
+const launcher = process.env.SNAP ? '/snap/bin/read-aloud' : (process.env.APPIMAGE || process.execPath)
+process.env.READ_ALOUD_ROOT = root
+if (app.isPackaged) process.env.READ_ALOUD_START = launcher
 const runtime = process.env.READ_ALOUD_RUNTIME || path.join(process.env.XDG_RUNTIME_DIR, 'read-aloud')
 const socketPath = path.join(runtime, 'daemon.sock')
 let window = null
@@ -125,7 +129,7 @@ ipcMain.on('speed', (_event, index) => { if (Number.isInteger(index)) request(`S
 
 async function voiceCommand(...args) {
   try {
-    const { stdout } = await runFile('python3', [path.join(root, 'worker/voices.py'), ...args], { timeout: 5000 })
+    const { stdout } = await runFile(python, [path.join(root, 'worker/voices.py'), ...args], { timeout: 5000 })
     return JSON.parse(stdout)
   } catch (error) {
     notify('Local voices are unavailable. Check the installed voice bundle.')
@@ -208,12 +212,33 @@ async function prepareModel() {
   }
 }
 
-if (!app.requestSingleInstanceLock()) app.quit()
+function runShortcut(argv) {
+  const index = argv.indexOf('--shortcut')
+  const action = index < 0 ? '' : argv[index + 1]
+  if (!['read', 'faster', 'slower'].includes(action)) return
+  const child = spawn(path.join(build, 'read-aloud'), [action], { env: process.env, stdio: ['ignore', 'ignore', 'pipe'] })
+  let error = ''
+  child.stderr.on('data', (chunk) => { error += chunk.toString() })
+  child.on('error', (failure) => notify(`Shortcut failed: ${failure.message}`))
+  child.on('exit', (code) => { if (code) notify(`Shortcut failed: ${error.trim() || code}`) })
+}
+
+if (process.argv.includes('--uninstall-setup')) {
+  void runFile(python, [path.join(root, 'scripts/desktop-setup.py'), 'uninstall', launcher])
+    .then(() => app.exit(0), (error) => { console.error(error.message); app.exit(1) })
+} else if (!app.requestSingleInstanceLock()) app.quit()
 else {
-  app.on('second-instance', (_event, argv) => { if (argv.includes('--show')) showWindow() })
+  app.on('second-instance', (_event, argv) => {
+    if (argv.includes('--show') || (!argv.includes('--background') && !argv.includes('--shortcut'))) showWindow()
+    runShortcut(argv)
+  })
   app.whenReady().then(() => {
     createWindow()
-    if (showIdle || process.argv.includes('--show')) showWindow()
+    if (app.isPackaged && !process.env.SNAP) {
+      void runFile(python, [path.join(root, 'scripts/desktop-setup.py'), 'install', launcher]).catch((error) => notify(`Shortcut setup failed: ${error.message}`))
+    }
+    runShortcut(process.argv)
+    if (showIdle || process.argv.includes('--show') || (app.isPackaged && !process.argv.includes('--background') && !process.argv.includes('--shortcut'))) showWindow()
     void prepareModel()
   })
 }

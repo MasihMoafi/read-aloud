@@ -5,9 +5,8 @@ const checkLogoApproval = require('./check-logo-approval.cjs')
 
 const root = path.resolve(__dirname, '..')
 const out = process.env.READ_ALOUD_BUILD
-const modules = process.env.READ_ALOUD_NODE_MODULES || path.join(process.env.HOME, 'Desktop/p/svg/node_modules')
+const modules = process.env.READ_ALOUD_NODE_MODULES || path.join(root, 'node_modules')
 const fromModules = createRequire(path.join(modules, 'placeholder.js'))
-const esbuild = require('/usr/local/node/lib/node_modules/vercel/node_modules/esbuild')
 const postcss = fromModules('postcss')
 const tailwind = fromModules('@tailwindcss/postcss')
 const sharp = fromModules('sharp')
@@ -34,6 +33,7 @@ async function build() {
   checkLogoApproval(root)
   for (const [name, values] of Object.entries(design)) checkContrast(name, values)
   if (process.argv[2] === '--check') return
+  const esbuild = fromModules('esbuild')
   fs.mkdirSync(out, { recursive: true })
   await esbuild.build({
     entryPoints: { main: path.join(root, 'electron/main.ts'), preload: path.join(root, 'electron/preload.ts') },

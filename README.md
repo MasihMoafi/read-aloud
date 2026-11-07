@@ -17,26 +17,53 @@ model can take several seconds. Later requests use the warm
 model. A preferred output is used while connected; otherwise
 the app uses the system output.
 
-## Setup
+## Installation
 
-This machine already has the Kokoro model, a Python environment,
-PipeWire, and the packages used to build the player. No
-download is needed for the following commands:
+CI is configured to produce three x86-64 artifacts for Ubuntu 24.04 and later:
+`read-aloud-deb`, `read-aloud-appimage`, and `read-aloud-snap`. Download and
+extract one workflow artifact before using the commands below. These packages
+have not yet been tested on a clean machine.
+
+For the deb, install its dependencies with apt:
 
 ```sh
-scripts/build.sh
-python3 scripts/setup.py install
+sudo apt install ./read-aloud-0.1.0-amd64.deb
 ```
 
-The build and its copy of Electron live on New Volume. The
-setup script adds three GNOME shortcuts, a launcher, and a
-login entry; it preserves other custom shortcuts. To remove
-them and stop the app, run `python3 scripts/setup.py uninstall`.
+For the AppImage, install `xclip`, `pipewire-bin`, and `libfuse2t64`, then make
+the downloaded AppImage executable and run it:
 
-The build reuses the Electron installation in `clocki` and
-the UI packages in `svg`. The resident voice uses the
-`rustidian` Kokoro environment and the cached model and
-voices named in [BRIEF.md](BRIEF.md).
+```sh
+sudo apt install xclip pipewire-bin libfuse2t64
+chmod +x read-aloud-0.1.0-x86_64.AppImage
+./read-aloud-0.1.0-x86_64.AppImage --show
+```
+
+For the unsigned development snap, install it locally and connect PipeWire:
+
+```sh
+sudo snap install --dangerous ./read-aloud_0.1.0_amd64.snap
+sudo snap connect read-aloud:pipewire
+```
+
+Open the deb or snap from the launcher, or run the AppImage. On first run it downloads about 337 MiB of
+voice files, verifies them, and stores them in your user data; the snap uses
+`$SNAP_USER_COMMON`. Internet access is needed for this download. The deb and
+AppImage register three GNOME shortcuts and login startup on first run. The
+AppImage must remain at the same path for these entries to work.
+
+The strict snap does not register host shortcuts or login startup. In GNOME
+Settings, add custom shortcuts for Super+R, Super+=, and Super+- with these
+respective commands: `read-aloud --shortcut read`, `read-aloud --shortcut
+faster`, and `read-aloud --shortcut slower`.
+
+To remove the deb or AppImage's shortcuts and login entry, run the installed
+app with `--uninstall-setup` before removing the package or file. Remove the
+snap with `sudo snap remove read-aloud` and remove its custom GNOME shortcuts
+in Settings. Model files remain in user data unless you remove them.
+
+See [third-party notices](THIRD_PARTY_NOTICES.md) for licences and the
+remaining source audit.
 
 ## Design
 
@@ -47,10 +74,5 @@ connects to it over a private local socket. This avoids a
 native Node bridge and keeps the voice running while the
 player is hidden.
 
-The app stores `app.log` in the `read-aloud` folder under
-`~/.cache`. It records timings and errors, not selected text.
-The focused audio integration check is:
-
-```sh
-nice -n 19 ~/.local/share/rustidian/kokoro-venv/bin/python tests/speech_integration.py
-```
+The development launcher stores `app.log` in the `read-aloud` folder under
+`~/.cache`.

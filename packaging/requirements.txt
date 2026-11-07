@@ -1,0 +1,5 @@
+# CPU wheel; the GPU extra is deliberately omitted.
+kokoro-onnx==0.4.7
+onnxruntime==1.23.2
+soundfile==0.13.1
+espeakng-loader==0.2.4
