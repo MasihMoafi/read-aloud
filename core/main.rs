@@ -11,7 +11,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
 
-const SPEEDS: [&str; 5] = ["1.0", "1.25", "1.5", "1.75", "2.0"];
+const SPEEDS: [&str; 7] = ["1.0", "1.25", "1.3", "1.4", "1.5", "1.75", "2.0"];
 const MAX_SELECTION: usize = 2 * 1024 * 1024;
 
 extern "C" {
@@ -450,7 +450,8 @@ impl Engine {
                 self.error.clear();
                 self.broadcast();
             }
-            Event::Speed(step) => self.set_speed((self.speed as i32 + step).clamp(0, 4) as usize),
+            Event::Speed(step) => self
+                .set_speed((self.speed as i32 + step).clamp(0, SPEEDS.len() as i32 - 1) as usize),
             Event::SetSpeed(speed) => self.set_speed(speed),
             Event::Subscribe(mut client) => {
                 if client.write_all(self.state().as_bytes()).is_ok() {

@@ -17,7 +17,7 @@ let shuttingDown = false
 let showIdle = false
 // The bar stays put; menus open the window upward above it.
 const BAR = { width: 204, height: 40 }
-const MENU_HEIGHT = { speed: 156, voice: 280 }
+const MENU_HEIGHT = { speed: 212, voice: 280 }
 const MENU_WIDTH = 168
 const runFile = promisify(execFile)
 

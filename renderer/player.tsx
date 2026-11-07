@@ -21,7 +21,7 @@ declare global {
 }
 
 // Same steps as SPEEDS in core/main.rs; the daemon accepts their index.
-const SPEEDS = ["1.0", "1.25", "1.5", "1.75", "2.0"]
+const SPEEDS = ["1.0", "1.25", "1.3", "1.4", "1.5", "1.75", "2.0"]
 const card = "rounded-xl border border-border/40 bg-background text-foreground"
 const icon = "size-7 rounded-lg [&_svg:not([class*='size-'])]:size-4"
 
