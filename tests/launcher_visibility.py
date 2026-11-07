@@ -11,6 +11,7 @@ import os
 import signal
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.request
@@ -127,14 +128,17 @@ def main():
             )
 
         def appctl(*args):
-            return subprocess.run(
-                ["python3", "-I", str(APPCTL), *args],
+            result = subprocess.run(
+                [sys.executable, "-I", str(APPCTL), *args],
                 env=env,
                 text=True,
                 capture_output=True,
-                check=True,
+                check=False,
                 timeout=15,
-            ).stdout
+            )
+            if result.returncode:
+                raise AssertionError(f"appctl {args}: {result.stderr}")
+            return result.stdout
 
         def screenshots(name):
             if not proof:
@@ -162,9 +166,10 @@ def main():
                 assert backgrounds[0] != backgrounds[1], (
                     "Light and dark themes look the same"
                 )
-                page.set_viewport_size({"width": 168, "height": 40})
+                original = page.evaluate("({width: innerWidth, height: innerHeight})")
+                page.set_viewport_size({"width": 204, "height": 40})
                 page.screenshot(path=str(Path(proof) / f"{name}-narrow.png"))
-                page.set_viewport_size({"width": 184, "height": 40})
+                page.set_viewport_size(original)
 
         def debug_ready():
             try:
@@ -229,6 +234,12 @@ def main():
         snapshot = appctl("see", "elpis")
         assert "Read Aloud" in snapshot and "Super+R to read" in snapshot, snapshot
         screenshots("idle")
+        appctl("click", "elpis", "role:button=Voice")
+        if proof:
+            appctl("shot", "elpis", str(Path(proof) / "voice-menu.png"))
+        appctl("click", "elpis", "role:menuitemradio=Emma · UK")
+        wait_for(lambda: (temp / "config/read-aloud/voice").exists(), "voice choice to save")
+        assert (temp / "config/read-aloud/voice").read_text().strip() == "bf_emma"
         appctl("click", "elpis", "role:button=Close")
         wait_for(lambda: not visible(), "closed window to hide")
         assert process.poll() is None, "Close stopped the resident app"
@@ -245,10 +256,29 @@ def main():
         wait_for(lambda: 'button "Stop"' in appctl("see", "elpis"), "active player")
         screenshots("player")
 
+        controls = json.loads(appctl("eval", "elpis", """(() => {
+          const stop = document.querySelector('[aria-label="Stop"]');
+          const voice = document.querySelector('[aria-label="Voice"]');
+          const speed = document.querySelector('[aria-label="Speed"]');
+          const icon = speed.querySelector('svg');
+          const label = speed.querySelector('span');
+          return { width: innerWidth, gap: speed.getBoundingClientRect().left - voice.getBoundingClientRect().right,
+            icon: icon?.classList.contains('lucide-zap'), iconBeforeLabel: icon?.getBoundingClientRect().right <= label.getBoundingClientRect().left,
+            clipped: speed.getBoundingClientRect().right > innerWidth || voice.getBoundingClientRect().left < stop.getBoundingClientRect().right };
+        })()"""))
+        assert controls["width"] <= 220 and controls["gap"] == 2 and controls["icon"] and controls["iconBeforeLabel"] and not controls["clipped"], controls
+
         def window_height():
             return json.loads(appctl("eval", "elpis", "window.innerHeight"))
 
         bar_height = window_height()
+        appctl("click", "elpis", "role:button=Voice")
+        appctl("click", "elpis", "role:button=Speed")
+        assert 'menu "Voices"' not in appctl("see", "elpis")
+        appctl("click", "elpis", "role:button=Voice")
+        appctl("click", "elpis", "role:menuitemradio=Michael · US")
+        wait_for(lambda: (temp / "config/read-aloud/voice").read_text().strip() == "am_michael", "playing voice choice")
+        wait_for(lambda: window_height() == bar_height, "voice menu to close")
         for label, shown in (("1.5×", "1.5×"), ("2.0×", "2.0×"), ("Normal", "1.0×")):
             appctl("click", "elpis", "role:button=Speed")
             wait_for(lambda: window_height() > bar_height, "speed menu to open")
@@ -269,8 +299,12 @@ def main():
                 f"speed {shown}",
             )
             wait_for(lambda: window_height() == bar_height, "speed menu to close")
+        appctl("click", "elpis", "role:button=Voice")
         appctl("click", "elpis", "role:button=Stop")
         wait_for(lambda: not visible(), "player to hide after stopping")
+        reopen()
+        wait_for(visible, "player to reopen after stopping")
+        wait_for(lambda: window_height() == bar_height, "voice menu to close after stopping")
         shutdown()
 
         process = launch()
@@ -284,8 +318,11 @@ def main():
             reopen()
         wait_for(visible, "launcher to show the login-started app")
         assert "Super+R to read" in appctl("see", "elpis")
+        appctl("click", "elpis", "role:button=Voice")
+        voice = json.loads(appctl("eval", "elpis", """(() => [...document.querySelectorAll('[role="menuitemradio"]')].find(e => e.getAttribute('aria-checked') === 'true')?.textContent.trim())()"""))
+        assert voice == "Michael · US", voice
         print(
-            "Cold launch, close, reopen, player stop, and hidden login startup passed."
+            "Cold launch, close, reopen, voice choice, speed, and hidden login startup passed."
         )
     finally:
         try:

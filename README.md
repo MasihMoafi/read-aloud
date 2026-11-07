@@ -5,7 +5,9 @@ hear it. Select new text and press it again to replace speech.
 
 While it reads, **Super+=** and **Super+-** change the speed.
 The small floating player has pause, stop, and a speed menu.
-The chosen speed is saved for next time.
+The voice button offers the bundled English voices; the chosen
+voice and speed are saved. Already buffered speech can finish in
+the previous voice after a change.
 
 Open Read Aloud from the app launcher to see the shortcut.
 Close that window when you are done; the app stays ready.
