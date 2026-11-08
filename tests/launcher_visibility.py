@@ -52,8 +52,15 @@ def wm_close():
     )
     screen = display.Display()
     window = screen.create_resource_object("window", int(result.stdout.split()[0]))
-    protocols, delete = screen.intern_atom("WM_PROTOCOLS"), screen.intern_atom("WM_DELETE_WINDOW")
-    event = protocol.event.ClientMessage(window=window, client_type=protocols, data=(32, [delete, X.CurrentTime, 0, 0, 0]))
+    protocols, delete = (
+        screen.intern_atom("WM_PROTOCOLS"),
+        screen.intern_atom("WM_DELETE_WINDOW"),
+    )
+    event = protocol.event.ClientMessage(
+        window=window,
+        client_type=protocols,
+        data=(32, [delete, X.CurrentTime, 0, 0, 0]),
+    )
     window.send_event(event)
     screen.flush()
     screen.close()
@@ -80,11 +87,15 @@ def main():
         if process is None:
             return
         try:
-            if process.poll() is None:
+            # The shortcut can start an app that `process` does not own.
+            if socket_path.exists():
                 try:
                     send(socket_path, "SHUTDOWN")
+                    wait_for(
+                        lambda: not socket_path.exists(), "app to shut down", timeout=10
+                    )
                     process.wait(timeout=10)
-                except (OSError, subprocess.TimeoutExpired):
+                except (OSError, AssertionError, subprocess.TimeoutExpired):
                     pass
         finally:
             try:
@@ -238,25 +249,43 @@ def main():
         if proof:
             appctl("shot", "elpis", str(Path(proof) / "voice-menu.png"))
         appctl("click", "elpis", "role:menuitemradio=Emma · UK")
-        wait_for(lambda: (temp / "config/read-aloud/voice").exists(), "voice choice to save")
+        wait_for(
+            lambda: (temp / "config/read-aloud/voice").exists(), "voice choice to save"
+        )
         assert (temp / "config/read-aloud/voice").read_text().strip() == "bf_emma"
         appctl("click", "elpis", "role:button=Close")
-        wait_for(lambda: not visible(), "closed window to hide")
-        assert process.poll() is None, "Close stopped the resident app"
-        reopen()
-        wait_for(visible, "window reopened by launcher")
-        # A window-manager close (Alt+F4) must hide the window, not destroy it.
+        wait_for(
+            lambda: process.poll() is not None and not socket_path.exists(),
+            "Close to end the app",
+        )
+        process = launch(show=True)
+        wait_for(
+            lambda: socket_path.exists() and debug_ready() and visible(),
+            "window reopened by launcher",
+        )
+        # A window-manager close (Alt+F4) ends the app the same way.
         wm_close()
-        wait_for(lambda: not visible(), "window-manager close to hide")
-        reopen()
-        wait_for(visible, "window reopened after a window-manager close")
+        wait_for(
+            lambda: process.poll() is not None and not socket_path.exists(),
+            "window-manager close to end the app",
+        )
 
+        # The shortcut alone must bring everything back after a close.
         read_selection()
+        wait_for(
+            lambda: socket_path.exists() and debug_ready(),
+            "shortcut to start the closed app",
+            timeout=30,
+        )
         send(socket_path, "PAUSE")
         wait_for(lambda: 'button "Stop"' in appctl("see", "elpis"), "active player")
         screenshots("player")
 
-        controls = json.loads(appctl("eval", "elpis", """(() => {
+        controls = json.loads(
+            appctl(
+                "eval",
+                "elpis",
+                """(() => {
           const stop = document.querySelector('[aria-label="Stop"]');
           const voice = document.querySelector('[aria-label="Voice"]');
           const speed = document.querySelector('[aria-label="Speed"]');
@@ -265,8 +294,16 @@ def main():
           return { width: innerWidth, gap: speed.getBoundingClientRect().left - voice.getBoundingClientRect().right,
             icon: icon?.classList.contains('lucide-zap'), iconBeforeLabel: icon?.getBoundingClientRect().right <= label.getBoundingClientRect().left,
             clipped: speed.getBoundingClientRect().right > innerWidth || voice.getBoundingClientRect().left < stop.getBoundingClientRect().right };
-        })()"""))
-        assert controls["width"] <= 220 and controls["gap"] == 2 and controls["icon"] and controls["iconBeforeLabel"] and not controls["clipped"], controls
+        })()""",
+            )
+        )
+        assert (
+            controls["width"] <= 220
+            and controls["gap"] == 2
+            and controls["icon"]
+            and controls["iconBeforeLabel"]
+            and not controls["clipped"]
+        ), controls
 
         def window_height():
             return json.loads(appctl("eval", "elpis", "window.innerHeight"))
@@ -277,7 +314,12 @@ def main():
         assert 'menu "Voices"' not in appctl("see", "elpis")
         appctl("click", "elpis", "role:button=Voice")
         appctl("click", "elpis", "role:menuitemradio=Michael · US")
-        wait_for(lambda: (temp / "config/read-aloud/voice").read_text().strip() == "am_michael", "playing voice choice")
+        wait_for(
+            lambda: (
+                (temp / "config/read-aloud/voice").read_text().strip() == "am_michael"
+            ),
+            "playing voice choice",
+        )
         wait_for(lambda: window_height() == bar_height, "voice menu to close")
         for label, shown in (("1.5×", "1.5×"), ("2.0×", "2.0×"), ("Normal", "1.0×")):
             appctl("click", "elpis", "role:button=Speed")
@@ -304,7 +346,9 @@ def main():
         wait_for(lambda: not visible(), "player to hide after stopping")
         reopen()
         wait_for(visible, "player to reopen after stopping")
-        wait_for(lambda: window_height() == bar_height, "voice menu to close after stopping")
+        wait_for(
+            lambda: window_height() == bar_height, "voice menu to close after stopping"
+        )
         shutdown()
 
         process = launch()
@@ -319,7 +363,13 @@ def main():
         wait_for(visible, "launcher to show the login-started app")
         assert "Super+R to read" in appctl("see", "elpis")
         appctl("click", "elpis", "role:button=Voice")
-        voice = json.loads(appctl("eval", "elpis", """(() => [...document.querySelectorAll('[role="menuitemradio"]')].find(e => e.getAttribute('aria-checked') === 'true')?.textContent.trim())()"""))
+        voice = json.loads(
+            appctl(
+                "eval",
+                "elpis",
+                """(() => [...document.querySelectorAll('[role="menuitemradio"]')].find(e => e.getAttribute('aria-checked') === 'true')?.textContent.trim())()""",
+            )
+        )
         assert voice == "Michael · US", voice
         print(
             "Cold launch, close, reopen, voice choice, speed, and hidden login startup passed."
