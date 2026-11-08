@@ -1,6 +1,6 @@
 name: read-aloud
 base: core24
-version: '0.1.0'
+version: '0.1.1'
 summary: Read selected English text aloud
 description: Read selected text with Kokoro speech on the CPU.
 grade: devel

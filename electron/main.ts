@@ -38,6 +38,9 @@ let downloading = false
 let lastError = ''
 let shuttingDown = false
 let showIdle = false
+let quitWhenDone = false
+let idleTimer = null
+const IDLE_MS = Number(process.env.READ_ALOUD_IDLE_MS) || 30 * 60 * 1000
 // The bar stays put; menus open the window upward above it.
 const BAR = { width: 204, height: 40 }
 const MENU_HEIGHT = { speed: 212, voice: 280 }
@@ -69,6 +72,7 @@ function applyState(line) {
   const [type, active, paused, speed, ready, error = '', speedValue = '1.0'] = line.split('\t')
   if (type !== 'STATE') return
   lastState = { active: active === '1', paused: paused === '1', speed: Number(speed), speedValue, ready: ready === '1', error }
+  updateIdleQuit()
   if (!window || window.isDestroyed()) return
   sendState()
   if (lastState.active) {
@@ -79,6 +83,30 @@ function applyState(line) {
   }
   if (error && error !== lastError) notify(error)
   lastError = error
+}
+
+// Closed or long idle means nothing keeps running: no window, daemon or voice (about 1.3 GB). The
+// next shortcut starts everything again. Speech or a first-run voice download finishes first.
+function closeApp() {
+  showIdle = false
+  if (window && !window.isDestroyed()) window.hide()
+  if (lastState.active || downloading) quitWhenDone = true
+  else app.quit()
+}
+
+function updateIdleQuit() {
+  if (lastState.active) {
+    clearTimeout(idleTimer)
+    idleTimer = null
+  } else if (quitWhenDone) {
+    app.quit()
+  } else if (!idleTimer) {
+    idleTimer = setTimeout(() => {
+      idleTimer = null
+      if (window && !window.isDestroyed() && window.isVisible()) updateIdleQuit()
+      else app.quit()
+    }, IDLE_MS)
+  }
 }
 
 function connect() {
@@ -107,12 +135,11 @@ function createWindow() {
     icon: path.join(build, 'logo.png'),
     webPreferences: { preload: path.join(build, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
-  // Closing from the window manager (Alt+F4, title menu) must only hide: the launcher reopens this window.
+  // Closing from the window manager (Alt+F4, title menu) ends the app once speech or a download is done.
   window.on('close', (event) => {
     if (shuttingDown) return
     event.preventDefault()
-    showIdle = false
-    window.hide()
+    closeApp()
   })
   window.setVisibleOnAllWorkspaces(true)
   window.loadFile(path.join(build, 'index.html'))
@@ -120,6 +147,7 @@ function createWindow() {
 }
 
 function showWindow() {
+  quitWhenDone = false
   if (!lastState.active) showIdle = true
   if (!window || window.isDestroyed()) return
   const reveal = () => {
@@ -134,7 +162,7 @@ function showWindow() {
 ipcMain.on('action', (_event, name) => {
   if (name === 'pause') request('PAUSE')
   else if (name === 'stop') request('STOP')
-  else if (name === 'hide' && window && !window.isDestroyed()) { showIdle = false; window.hide() }
+  else if (name === 'hide') closeApp()
   else if (name === 'retry') void prepareModel()
 })
 

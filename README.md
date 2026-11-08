@@ -13,7 +13,7 @@
 
 <a href="#install"><img src="https://img.shields.io/badge/Install-Ubuntu_24.04+_·_Debian-147d78?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Install"></a>
 
-<sub>Beta · v0.1.0 · Linux x86_64, GNOME</sub>
+<sub>Beta · v0.1.1 · Linux x86_64, GNOME</sub>
 
 </div>
 
@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/da2c0997-1951-4d3c-a876-9e5404f4a163
 </tr>
 <tr>
 <td valign="top"><b>💻 Voice on your computer</b><br>Kokoro speaks on your CPU; your text is not sent anywhere. The voice downloads once (about 337 MiB, checked).</td>
-<td valign="top"><b>⚡ Always ready</b><br>Starts at login and keeps the voice loaded, so later requests begin quickly.</td>
+<td valign="top"><b>🪶 Light when idle</b><br>Keeps the voice loaded for 30 idle minutes, then quits and frees its memory. Closing it quits too; Super+R starts it again.</td>
 <td valign="top"><b>🎧 Your headphones</b><br>Plays on your preferred output while it is connected, otherwise on the system output.</td>
 </tr>
 </table>
