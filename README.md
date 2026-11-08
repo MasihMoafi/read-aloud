@@ -19,48 +19,30 @@ the app uses the system output.
 
 ## Installation
 
-CI is configured to produce three x86-64 artifacts for Ubuntu 24.04 and later:
-`read-aloud-deb`, `read-aloud-appimage`, and `read-aloud-snap`. Download and
-extract one workflow artifact before using the commands below. These packages
-have not yet been tested on a clean machine.
-
-For the deb, install its dependencies with apt:
+On Ubuntu 24.04 or later, or Debian (x86-64):
 
 ```sh
-sudo apt install ./read-aloud-0.1.0-amd64.deb
+curl -fsSL https://raw.githubusercontent.com/MasihMoafi/read-aloud/main/scripts/install.sh | bash
 ```
 
-For the AppImage, install `xclip`, `pipewire-bin`, and `libfuse2t64`, then make
-the downloaded AppImage executable and run it:
+Then open Read Aloud from your app menu once. The first start downloads the voice (about 337 MiB, checked), sets
+up the Super+R, Super+= and Super+- shortcuts in GNOME, and starts Read Aloud at login.
+
+<details>
+<summary>Install the .deb by hand, or remove Read Aloud</summary>
+
+Download `read-aloud-<version>-amd64.deb` and its `.sha256` from the
+[latest release](https://github.com/MasihMoafi/read-aloud/releases/latest), then:
 
 ```sh
-sudo apt install xclip pipewire-bin libfuse2t64
-chmod +x read-aloud-0.1.0-x86_64.AppImage
-./read-aloud-0.1.0-x86_64.AppImage --show
+sha256sum -c read-aloud-*-amd64.deb.sha256
+sudo apt install ./read-aloud-*-amd64.deb
 ```
 
-For the unsigned development snap, install it locally and connect PipeWire:
+To remove it, first run `read-aloud --uninstall-setup` (removes the shortcuts and login entry), then
+`sudo apt remove read-aloud`. The voice files stay in your user data until you delete them.
 
-```sh
-sudo snap install --dangerous ./read-aloud_0.1.0_amd64.snap
-sudo snap connect read-aloud:pipewire
-```
-
-Open the deb or snap from the launcher, or run the AppImage. On first run it downloads about 337 MiB of
-voice files, verifies them, and stores them in your user data; the snap uses
-`$SNAP_USER_COMMON`. Internet access is needed for this download. The deb and
-AppImage register three GNOME shortcuts and login startup on first run. The
-AppImage must remain at the same path for these entries to work.
-
-The strict snap does not register host shortcuts or login startup. In GNOME
-Settings, add custom shortcuts for Super+R, Super+=, and Super+- with these
-respective commands: `read-aloud --shortcut read`, `read-aloud --shortcut
-faster`, and `read-aloud --shortcut slower`.
-
-To remove the deb or AppImage's shortcuts and login entry, run the installed
-app with `--uninstall-setup` before removing the package or file. Remove the
-snap with `sudo snap remove read-aloud` and remove its custom GNOME shortcuts
-in Settings. Model files remain in user data unless you remove them.
+</details>
 
 See [third-party notices](THIRD_PARTY_NOTICES.md) for licences and the
 remaining source audit.

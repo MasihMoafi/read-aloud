@@ -1,7 +1,9 @@
 name: Build Linux packages
 on:
   push:
-    branches: [build/snap]
+    branches: [main]
+    tags: ['v*']
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -79,16 +81,18 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: read-aloud-deb
           path: pkg
       - name: Install, start and remove in a fresh container
         run: |
-          docker run --rm -v "$PWD/pkg:/pkg:ro" ubuntu:24.04 bash -euo pipefail -c '
+          docker run --rm -v "$PWD/pkg:/pkg:ro" -v "$GITHUB_WORKSPACE/scripts:/scripts:ro" ubuntu:24.04 bash -euo pipefail -c '
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq
-            apt-get install -y -qq /pkg/*.deb xvfb xauth > /dev/null
+            apt-get install -y -qq xvfb xauth > /dev/null
+            READ_ALOUD_DEB=$(ls /pkg/*.deb) bash /scripts/install.sh
             command -v read-aloud
             ls /usr/share/applications | grep -i read
             useradd -m tester
@@ -100,3 +104,26 @@ jobs:
             if command -v read-aloud || test -e "/opt/Read Aloud"; then echo "files left after removal"; exit 1; fi
             echo "install, start and removal passed"
           '
+
+  # A v* tag publishes the tested .deb with its checksum (the install script checks it).
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: clean-install
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: read-aloud-deb
+          path: pkg
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd pkg
+          for f in *.deb; do sha256sum "$f" > "$f.sha256"; done
+          notes="Select English text anywhere and press Super+R to hear it. Install on Ubuntu 24.04+ or Debian:"
+          notes="$notes curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/scripts/install.sh | bash"
+          gh release create "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --title "Read Aloud ${GITHUB_REF_NAME#v}" \
+            --notes "$notes" *.deb *.sha256
