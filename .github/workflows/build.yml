@@ -73,3 +73,29 @@ jobs:
           name: read-aloud-snap
           path: ${{ steps.snapcraft.outputs.snap }}
           if-no-files-found: error
+  # A clean Ubuntu 24.04 container stands in for a new user's machine: install the .deb with apt, start the app
+  # without a desktop session, then remove it and check nothing of it is left behind.
+  clean-install:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: read-aloud-deb
+          path: pkg
+      - name: Install, start and remove in a fresh container
+        run: |
+          docker run --rm -v "$PWD/pkg:/pkg:ro" ubuntu:24.04 bash -euo pipefail -c '
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq /pkg/*.deb xvfb xauth > /dev/null
+            command -v read-aloud
+            ls /usr/share/applications | grep -i read
+            useradd -m tester
+            su tester -c "xvfb-run -a timeout 20 read-aloud --background --no-sandbox" > /tmp/run.log 2>&1 || status=$?
+            cat /tmp/run.log | tail -20
+            [ "${status:-124}" = 124 ] || { echo "read-aloud exited early with status $status"; exit 1; }
+            apt-get remove -y -qq read-aloud > /dev/null
+            if command -v read-aloud || test -e "/opt/Read Aloud"; then echo "files left after removal"; exit 1; fi
+            echo "install, start and removal passed"
+          '
