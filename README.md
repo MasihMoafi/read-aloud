@@ -1,23 +1,44 @@
+<div align="center">
+
+<img src="assets/logo.svg" width="128" height="128" alt="Read Aloud logo, a teal mockingbird">
+
 # Read Aloud
 
-Select English text and press **Super+R** (Windows key + R) to
-hear it. Select new text and press it again to replace speech.
+### Your text, out loud.<br>Select text anywhere on Linux and press Super+R.
 
-While it reads, **Super+=** and **Super+-** change the speed.
-The small floating player has pause, stop, and a speed menu.
-The voice button offers the bundled English voices; the chosen
-voice and speed are saved. Already buffered speech can finish in
-the previous voice after a change.
+[![Latest release](https://img.shields.io/github/v/release/MasihMoafi/read-aloud?style=flat-square&color=147d78&label=release)](https://github.com/MasihMoafi/read-aloud/releases/latest)
+[![Linux](https://img.shields.io/badge/Linux-x86__64-147d78?style=flat-square&logo=linux&logoColor=white)](#install)
+[![Voice](https://img.shields.io/badge/voice-Kokoro,_on_your_computer-555?style=flat-square)](https://github.com/thewh1teagle/kokoro-onnx)
+[![MIT license](https://img.shields.io/badge/license-MIT-555?style=flat-square)](LICENSE)
 
-Open Read Aloud from the app launcher to see the shortcut.
-Close that window when you are done; the app stays ready.
-The app also starts at login and keeps the voice ready. If it
-was not running, the first shortcut starts it; loading the
-model can take several seconds. Later requests use the warm
-model. A preferred output is used while connected; otherwise
-the app uses the system output.
+<a href="#install"><img src="https://img.shields.io/badge/Install-Ubuntu_24.04+_·_Debian-147d78?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Install"></a>
 
-## Installation
+<sub>Beta · v0.1.0 · Linux x86_64, GNOME</sub>
+
+</div>
+
+<br>
+
+https://github.com/user-attachments/assets/da2c0997-1951-4d3c-a876-9e5404f4a163
+
+<p align="center"><sub>Select a passage, press Super+R, listen while you work. Turn the sound on.</sub></p>
+
+## What it does
+
+<table>
+<tr>
+<td width="33%" valign="top"><b>⌨️ One shortcut</b><br>Select English text in any app and press <b>Super+R</b>. Select new text and press it again to switch.</td>
+<td width="33%" valign="top"><b>⏩ Your pace</b><br><b>Super+=</b> and <b>Super+-</b> change the speed while it reads, from normal to 2×.</td>
+<td width="33%" valign="top"><b>🎛️ A small player</b><br>Pause, stop, a speed menu and the bundled English voices. Your voice and speed are saved.</td>
+</tr>
+<tr>
+<td valign="top"><b>💻 Voice on your computer</b><br>Kokoro speaks on your CPU; your text is not sent anywhere. The voice downloads once (about 337 MiB, checked).</td>
+<td valign="top"><b>⚡ Always ready</b><br>Starts at login and keeps the voice loaded, so later requests begin quickly.</td>
+<td valign="top"><b>🎧 Your headphones</b><br>Plays on your preferred output while it is connected, otherwise on the system output.</td>
+</tr>
+</table>
+
+## Install
 
 On Ubuntu 24.04 or later, or Debian (x86-64):
 
@@ -25,11 +46,11 @@ On Ubuntu 24.04 or later, or Debian (x86-64):
 curl -fsSL https://raw.githubusercontent.com/MasihMoafi/read-aloud/main/scripts/install.sh | bash
 ```
 
-Then open Read Aloud from your app menu once. The first start downloads the voice (about 337 MiB, checked), sets
-up the Super+R, Super+= and Super+- shortcuts in GNOME, and starts Read Aloud at login.
+Then open Read Aloud from your app menu once. The first start downloads the voice, sets up the Super+R, Super+=
+and Super+- shortcuts in GNOME, and starts Read Aloud at login.
 
 <details>
-<summary>Install the .deb by hand, or remove Read Aloud</summary>
+<summary><b>Install the .deb by hand, or remove Read Aloud</b></summary>
 
 Download `read-aloud-<version>-amd64.deb` and its `.sha256` from the
 [latest release](https://github.com/MasihMoafi/read-aloud/releases/latest), then:
@@ -44,17 +65,18 @@ To remove it, first run `read-aloud --uninstall-setup` (removes the shortcuts an
 
 </details>
 
-See [third-party notices](THIRD_PARTY_NOTICES.md) for licences and the
-remaining source audit.
+<details>
+<summary><b>How it works</b></summary>
 
-## Design
+A Rust process owns playback, speed and sentence prefetching. It keeps a Python Kokoro worker loaded and streams
+each rendered sentence through PipeWire. The Electron player connects to it over a private local socket, so the
+voice keeps running while the player is hidden. The development launcher writes `app.log` to `~/.cache/read-aloud`.
 
-The Rust process owns playback, speed, and sentence
-prefetching. It keeps a Python Kokoro worker loaded and
-streams each rendered sentence through PipeWire. Electron
-connects to it over a private local socket. This avoids a
-native Node bridge and keeps the voice running while the
-player is hidden.
+</details>
 
-The development launcher stores `app.log` in the `read-aloud` folder under
-`~/.cache`.
+## Status
+
+Tested on GitHub's servers: each release installs, starts and uninstalls in a clean Ubuntu 24.04 system. A Snap is
+on the way. Report what broke in [Issues](https://github.com/MasihMoafi/read-aloud/issues).
+
+<div align="center"><sub><a href="LICENSE">MIT license</a> · <a href="THIRD_PARTY_NOTICES.md">Third-party notices</a> (Kokoro, eSpeak NG and the other bundled parts keep their own licences)</sub></div>
