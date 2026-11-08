@@ -13,6 +13,8 @@ use std::time::{Duration, Instant};
 
 const SPEEDS: [&str; 7] = ["1.0", "1.25", "1.3", "1.4", "1.5", "1.75", "2.0"];
 const MAX_SELECTION: usize = 2 * 1024 * 1024;
+/// Sentences kept rendered from the current one, so synthesis stays ahead of playback.
+const RENDER_AHEAD: usize = 6;
 
 extern "C" {
     fn prctl(option: i32, ...) -> i32;
@@ -181,7 +183,55 @@ fn inline_speakable(line: &str) -> String {
         out.push(if c == '|' { ' ' } else { c });
         i += 1;
     }
-    out.split_whitespace().collect::<Vec<_>>().join(" ")
+    out.split_whitespace()
+        .map(spoken_word)
+        .filter(|word| !word.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// A word with slashes as a listener wants it: a URL is its site, a path its last name, and
+/// any other slash ("and/or", "11/8") a pause. The engine would otherwise say "slash".
+fn spoken_word(word: &str) -> String {
+    if !word.contains('/') {
+        return word.to_owned();
+    }
+    let opening = |c: char| matches!(c, '"' | '\'' | '(' | '[' | '{');
+    let closing = |c: char| {
+        matches!(
+            c,
+            '"' | '\'' | ')' | ']' | '}' | ',' | ';' | ':' | '.' | '!' | '?'
+        )
+    };
+    let tail = word.trim_end_matches(closing);
+    let (punctuation, body) = (&word[tail.len()..], tail.trim_start_matches(opening));
+    let lead = &tail[..tail.len() - body.len()];
+    let site = body
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .or(body.starts_with("www.").then_some(body))
+        .and_then(|rest| rest.split(['/', '?', '#']).next())
+        .filter(|host| !host.is_empty());
+    let is_path = body.chars().any(char::is_alphabetic)
+        && (body.starts_with(['/', '~', '.'])
+            || body.contains('.')
+            || body.matches('/').count() > 1);
+    let spoken = if let Some(host) = site {
+        host.trim_start_matches("www.").replace('.', " dot ")
+    } else if is_path {
+        let name = body.rsplit('/').find(|part| !part.is_empty()).unwrap_or("");
+        let name = name.split(':').next().unwrap_or(name);
+        name.replace(['-', '_'], " ")
+            .replace('.', " dot ")
+            .trim()
+            .to_owned()
+    } else {
+        body.replace('/', " ").trim().to_owned()
+    };
+    if spoken.is_empty() {
+        return String::new();
+    }
+    format!("{lead}{spoken}{punctuation}")
 }
 
 #[cfg(test)]
@@ -211,6 +261,22 @@ mod speakable_tests {
         assert_eq!(
             speakable("- ==🟢Ship it== <mark style=\"background: #ec4899;\">today</mark>"),
             "Ship it today"
+        );
+    }
+
+    #[test]
+    fn slashes_are_not_spoken() {
+        assert_eq!(
+            speakable("Open `~/Desktop/p/dsh-superagent-prototype` now."),
+            "Open dsh superagent prototype now."
+        );
+        assert_eq!(
+            speakable("Fix core/main.rs:12 and run /tl."),
+            "Fix main dot rs and run tl."
+        );
+        assert_eq!(
+            speakable("See https://www.github.com/a/b, then (and/or) 301/302 on 11/8/2026 a / b."),
+            "See github dot com, then (and or) 301 302 on 11 8 2026 a b."
         );
     }
 
@@ -548,16 +614,8 @@ impl Engine {
             }
         }
         if self.inflight.is_none() {
-            let target = if !self.rendered.contains_key(&self.current) {
-                Some(self.current)
-            } else if self.audio.is_some()
-                && self.current + 1 < self.sentences.len()
-                && !self.rendered.contains_key(&(self.current + 1))
-            {
-                Some(self.current + 1)
-            } else {
-                None
-            };
+            let end = self.sentences.len().min(self.current + RENDER_AHEAD);
+            let target = (self.current..end).find(|index| !self.rendered.contains_key(index));
             if let Some(index) = target {
                 let file = runtime_dir().join(format!("audio-{}-{index}.wav", self.generation));
                 let line = format!(
