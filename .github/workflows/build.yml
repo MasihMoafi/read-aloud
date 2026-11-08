@@ -100,6 +100,7 @@ jobs:
             su tester -c "xvfb-run -a timeout 20 read-aloud --background --no-sandbox" > /tmp/run.log 2>&1 || status=$?
             cat /tmp/run.log | tail -20
             [ "$status" = 124 ] || { echo "read-aloud exited early with status $status"; exit 1; }
+            if grep -E "TypeError|ReferenceError|Uncaught" /tmp/run.log; then echo "read-aloud logged a JavaScript error"; exit 1; fi
             apt-get remove -y -qq read-aloud > /dev/null
             if command -v read-aloud || test -e "/opt/Read Aloud"; then echo "files left after removal"; exit 1; fi
             echo "install, start and removal passed"

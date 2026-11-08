@@ -11,7 +11,22 @@ const python = process.env.READ_ALOUD_PYTHON || (app.isPackaged ? path.join(root
 const launcher = process.env.SNAP ? '/snap/bin/read-aloud' : (process.env.APPIMAGE || process.execPath)
 process.env.READ_ALOUD_ROOT = root
 if (app.isPackaged) process.env.READ_ALOUD_START = launcher
-const runtime = process.env.READ_ALOUD_RUNTIME || path.join(process.env.XDG_RUNTIME_DIR, 'read-aloud')
+const runtime = process.env.READ_ALOUD_RUNTIME || (process.env.XDG_RUNTIME_DIR
+  ? path.join(process.env.XDG_RUNTIME_DIR, 'read-aloud')
+  : privateTempFolder())
+process.env.READ_ALOUD_RUNTIME = runtime // the core and worker use the same folder
+
+// Without a login session (su, ssh, containers) XDG_RUNTIME_DIR is unset: use a folder in /tmp only this user owns.
+function privateTempFolder() {
+  const fs = require('node:fs')
+  const folder = path.join(require('node:os').tmpdir(), `read-aloud-${process.getuid()}`)
+  fs.mkdirSync(folder, { recursive: true, mode: 0o700 })
+  const stat = fs.lstatSync(folder)
+  if (!stat.isDirectory() || stat.uid !== process.getuid() || (stat.mode & 0o077) !== 0) {
+    throw new Error(`${folder} is not a private folder of this user; set XDG_RUNTIME_DIR`)
+  }
+  return folder
+}
 const socketPath = path.join(runtime, 'daemon.sock')
 let window = null
 let daemon = null
