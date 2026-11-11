@@ -21,6 +21,7 @@ python3 -c 'import ast,pathlib; ast.parse(pathlib.Path("worker/kokoro.py").read_
 node --check electron/main.cjs
 node --check scripts/build-ui.cjs
 node scripts/build-ui.cjs --check
+npm test --silent
 # Read Aloud's own Electron, pinned in package.json (npm install); the runtime is refreshed when that version changes.
 electron_source="${READ_ALOUD_ELECTRON_SOURCE:-$root/node_modules/electron/dist}"
 test -x "$electron_source/electron" || { printf '%s\n' 'Electron is missing: run npm install.' >&2; exit 1; }

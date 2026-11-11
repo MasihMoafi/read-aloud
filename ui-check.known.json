@@ -1,0 +1,4 @@
+{
+  "R4|renderer/components/button.tsx|raw black/white; use a theme token so both themes work": 1,
+  "R5|renderer/player.tsx|hand-written control; use the shadcn/ui component from components/ui": 2
+}
