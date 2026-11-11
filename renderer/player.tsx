@@ -23,7 +23,9 @@ declare global {
 // Same steps as SPEEDS in core/main.rs; the daemon accepts their index.
 const SPEEDS = ["1.0", "1.25", "1.3", "1.4", "1.5", "1.75", "2.0"]
 const card = "rounded-xl border border-border/40 bg-background text-foreground"
-const icon = "size-7 rounded-lg [&_svg:not([class*='size-'])]:size-4"
+// One height and corner for every control in the bar and its menus; change it here and they all follow.
+const control = "h-7 rounded-lg"
+const icon = `${control} w-7 [&_svg:not([class*='size-'])]:size-4`
 
 function SpeedMenu({ state, open, toggle }: { state: PlayerState; open: boolean; toggle: () => void }) {
   return <>
@@ -32,7 +34,7 @@ function SpeedMenu({ state, open, toggle }: { state: PlayerState; open: boolean;
         {SPEEDS.map((value, index) => (
           <li key={value} role="none">
             <button role="menuitemradio" aria-checked={index === state.speed}
-              className="flex h-7 w-full items-center gap-2 rounded-lg px-2 text-xs tabular-nums outline-none hover:bg-accent focus-visible:bg-accent aria-checked:font-semibold"
+              className={`flex ${control} w-full items-center gap-2 px-2 text-xs tabular-nums outline-none hover:bg-accent focus-visible:bg-accent aria-checked:font-semibold`}
               onClick={() => { window.readAloud.setSpeed(index); toggle() }}>
               <Check aria-hidden="true" className={`size-3.5 text-primary ${index === state.speed ? "" : "invisible"}`} />
               {value === "1.0" ? "Normal" : `${value}×`}
@@ -42,7 +44,7 @@ function SpeedMenu({ state, open, toggle }: { state: PlayerState; open: boolean;
       </ul>
     )}
     <Button variant="ghost" aria-label="Speed" aria-haspopup="menu" aria-expanded={open}
-      className="h-7 gap-0.5 rounded-lg px-2 text-xs tabular-nums has-[>svg]:px-2" onClick={toggle}>
+      className={`${control} gap-0.5 px-2 text-xs tabular-nums has-[>svg]:px-2`} onClick={toggle}>
       <Zap aria-hidden="true" className="size-4" />
       <span>{state.speedValue}×</span>
     </Button>
@@ -63,7 +65,7 @@ function VoiceMenu({ data, open, saving, toggle, onSelect }: {
         {data.voices.map((name) => (
           <li key={name} role="none">
             <button role="menuitemradio" aria-checked={name === data.selected} disabled={saving}
-              className="flex h-7 w-full items-center gap-2 rounded-lg px-2 text-xs outline-none hover:bg-accent focus-visible:bg-accent aria-checked:font-semibold"
+              className={`flex ${control} w-full items-center gap-2 px-2 text-xs outline-none hover:bg-accent focus-visible:bg-accent aria-checked:font-semibold`}
               onClick={() => onSelect(name)}>
               <Check aria-hidden="true" className={`size-3.5 text-primary ${name === data.selected ? "" : "invisible"}`} />
               {voiceLabel(name)}
