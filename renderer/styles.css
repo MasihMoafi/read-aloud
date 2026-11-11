@@ -13,6 +13,14 @@
   --color-accent-foreground: var(--foreground);
 }
 
+/* The shared spacing unit comes from ~/Desktop/p/shared-system/design/design.json, written between the design markers
+   by `shared-design build`. Read Aloud's colours are its own (design/design.json) and its corners stay Tailwind's. */
+/* design:start: generated from ~/Desktop/p/skills/web-dev/design/design.json. Change a value with `design set`, not here. */
+:root {
+  --spacing: 0.25rem;
+}
+/* design:end */
+
 html, body, #root { width: 100%; height: 100%; overflow: hidden; background: transparent; }
 body { margin: 0; font-family: system-ui, sans-serif; }
 .player { -webkit-app-region: drag; }
