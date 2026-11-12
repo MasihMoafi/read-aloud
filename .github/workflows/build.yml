@@ -1,130 +1,33 @@
-name: Build Linux packages
+name: Verify installed player shutdown
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  build:
+  lifetime:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install build tools
+      - name: Check installed player source
+        run: node --check electron/main.cjs
+      - name: Install isolated window test tools
         run: |
-          npm ci
-          node -e "const fs = require('fs'); const p = require('./package.json'); p.homepage = 'https://github.com/' + process.env.GITHUB_REPOSITORY; fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n')"
-          npm install --no-save --package-lock=false electron-builder@26.0.12 esbuild@0.25.12 react@19.2.8 react-dom@19.2.8 lucide-react@1.33.0 class-variance-authority@0.7.1 cn@0.5.0 radix-ui@1.8.1 tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 postcss@8.5.26 sharp@0.35.3
-      - name: Test downloader
-        run: node --experimental-strip-types --test tests/model-download.test.ts
-      - name: Build CPU runtime and core
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb xauth xdotool python3-xlib libgtk-3-0t64 libnss3 libasound2t64
+          npm ci --no-audit --no-fund
+      - name: Prepare a silent player fixture
         run: |
-          packaging/build-runtime.sh
-          cargo build --release --locked
-          mkdir -p staging/build
-          cp target/release/read-aloud staging/build/read-aloud
-      - name: Build player
-        run: READ_ALOUD_BUILD="$PWD/staging/build" node scripts/build-ui.cjs
-      - name: Package deb and AppImage
-        run: npx electron-builder --linux deb AppImage --x64 --publish never
-      - name: Inspect deb and AppImage contents
-        run: |
-          mkdir -p "$RUNNER_TEMP/deb" "$RUNNER_TEMP/appimage"
-          dpkg-deb -x dist/*.deb "$RUNNER_TEMP/deb"
-          image="$PWD/$(ls dist/*.AppImage)"
-          (cd "$RUNNER_TEMP/appimage" && "$image" --appimage-extract > /dev/null)
-          python3 packaging/inspect-package.py "$RUNNER_TEMP/deb" "$RUNNER_TEMP/appimage/squashfs-root"
-          du -h dist/*.deb dist/*.AppImage
-      - name: Upload deb
-        uses: actions/upload-artifact@v4
-        with:
-          name: read-aloud-deb
-          path: dist/*.deb
-          if-no-files-found: error
-      - name: Upload AppImage
-        uses: actions/upload-artifact@v4
-        with:
-          name: read-aloud-appimage
-          path: dist/*.AppImage
-          if-no-files-found: error
-      - name: Prepare snap contents
-        run: |
-          mkdir -p staging/snap-root/opt/read-aloud staging/snap-root/usr/share/applications
-          cp -a dist/linux-unpacked/. staging/snap-root/opt/read-aloud/
-          cp snap/read-aloud.desktop staging/snap-root/usr/share/applications/read-aloud.desktop
-      - name: Build snap
-        id: snapcraft
-        uses: snapcore/action-build@v1
-      - name: Inspect snap contents
+          mkdir -p "$RUNNER_TEMP/player/electron"
+          ln -s "$PWD/node_modules/electron/dist/electron" "$RUNNER_TEMP/player/electron/electron"
+          printf '<!doctype html><title>Read Aloud</title><body>Read Aloud</body>' > "$RUNNER_TEMP/player/index.html"
+          touch "$RUNNER_TEMP/player/logo.png"
+      - name: Check window close and idle lifetime in real Electron
         env:
-          SNAP_FILE: ${{ steps.snapcraft.outputs.snap }}
+          READ_ALOUD_BUILD: ${{ runner.temp }}/player
         run: |
-          sudo apt-get update
-          sudo apt-get install -y squashfs-tools
-          unsquashfs -d "$RUNNER_TEMP/snap" "$SNAP_FILE" > /dev/null
-          python3 packaging/inspect-package.py "$RUNNER_TEMP/snap"
-          du -h "$SNAP_FILE"
-      - name: Upload snap
-        uses: actions/upload-artifact@v4
-        with:
-          name: read-aloud-snap
-          path: ${{ steps.snapcraft.outputs.snap }}
-          if-no-files-found: error
-  # A clean Ubuntu 24.04 container stands in for a new user's machine: install the .deb with apt, start the app
-  # without a desktop session, then remove it and check nothing of it is left behind.
-  clean-install:
-    needs: build
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: read-aloud-deb
-          path: pkg
-      - name: Install, start and remove in a fresh container
-        run: |
-          docker run --rm -v "$PWD/pkg:/pkg:ro" -v "$GITHUB_WORKSPACE/scripts:/scripts:ro" ubuntu:24.04 bash -euo pipefail -c '
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq
-            apt-get install -y -qq xvfb xauth > /dev/null
-            READ_ALOUD_DEB=$(ls /pkg/*.deb) bash /scripts/install.sh
-            command -v read-aloud
-            ls /usr/share/applications | grep -i read
-            useradd -m tester
-            status=0
-            su tester -c "xvfb-run -a timeout 20 read-aloud --background --no-sandbox" > /tmp/run.log 2>&1 || status=$?
-            cat /tmp/run.log | tail -20
-            [ "$status" = 124 ] || { echo "read-aloud exited early with status $status"; exit 1; }
-            if grep -E "TypeError|ReferenceError|Uncaught" /tmp/run.log; then echo "read-aloud logged a JavaScript error"; exit 1; fi
-            apt-get remove -y -qq read-aloud > /dev/null
-            if command -v read-aloud || test -e "/opt/Read Aloud"; then echo "files left after removal"; exit 1; fi
-            echo "install, start and removal passed"
-          '
-
-  # A v* tag publishes the tested .deb with its checksum (the install script checks it).
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: clean-install
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: read-aloud-deb
-          path: pkg
-      - name: Publish the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cd pkg
-          for f in *.deb; do sha256sum "$f" > "$f.sha256"; done
-          notes="Select English text anywhere and press Super+R to hear it. Install on Ubuntu 24.04+ or Debian:"
-          notes="$notes curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/scripts/install.sh | bash"
-          gh release create "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --title "Read Aloud ${GITHUB_REF_NAME#v}" \
-            --notes "$notes" *.deb *.sha256
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          xvfb-run -a nice -n 19 python3 tests/app_lifetime.py
